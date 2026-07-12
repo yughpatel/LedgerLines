@@ -7,4 +7,5 @@ node_modules/
 dist/
 build/
 .idea/
-backend/app/flow_signup_endpoint.txt
+backend/flow_signup_endpoint.txt
+backend/flow_login_endpoint.txt

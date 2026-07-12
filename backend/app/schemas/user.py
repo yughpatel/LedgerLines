@@ -11,3 +11,7 @@ class UserResponse(BaseModel):
     email: str
     # Allows Pydantic to read data directly from database ORM attributes
     model_config = ConfigDict(from_attributes=True)
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
