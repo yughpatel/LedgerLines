@@ -18,12 +18,11 @@ class Transaction(Base):
     # Links each transaction to its owner in the users table
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-    user: Mapped["User"] = relationship("User")
-
-    # timezone=True avoids ambiguity if server/user timezones differ.
-    # server_default uses Postgres's own clock, not Python's, so it's consistent even across multiple app servers
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
+    #To establish bidirectional relationship
+    user: Mapped["User"] = relationship("User", back_populates="transactions")
+    
+   # When the money actually moved
+    transaction_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     # Enum restricts this to only CREDIT/DEBIT at the database level,
     # so invalid values can't slip in even from outside this app
     type: Mapped[TransactionType] = mapped_column(SqlEnum(TransactionType))
