@@ -30,11 +30,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.utcnow() + expires_delta
 
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
 
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(get_db)):
@@ -42,8 +42,8 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
     Returns the user ID if token is valid. Raises 401 if token is invalid, missing or expired."""
 
     try:
-        # Decoding the JWT using SECRET_KEY and ALGORITHM, To verify the signature and check expiration
-        payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        # Decoding the JWT using secret_key and algorithm, To verify the signature and check expiration
+        payload = jwt.decode(token.credentials, settings.secret_key, algorithms=[settings.algorithm])
 
         # Extract User ID from the payload
         user_id: str = payload.get("sub")
