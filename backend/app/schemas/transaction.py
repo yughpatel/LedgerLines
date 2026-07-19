@@ -34,3 +34,8 @@ class TransactionUpdate(BaseModel):
     category: Optional[str] = None
     description: Optional[str] = None
     transaction_date: Optional[datetime] = None
+
+class MonthlySummaryResponse(BaseModel):
+    total_earned: Decimal
+    total_spent: Decimal
+    net: Decimal

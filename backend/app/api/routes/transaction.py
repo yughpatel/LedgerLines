@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
-from app.models.transaction import Transaction
+from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, MonthlySummaryResponse
+from app.models.transaction import Transaction, TransactionType
 from app.db.session import get_db
 from app.auth.security import get_current_user
 from app.models.user import User
-
+import calendar
+from datetime import date
+from decimal import Decimal
+from sqlalchemy import func, select, case
 router = APIRouter(prefix="/transactions", tags=["transaction"])
 
 @router.post("", status_code=201, response_model=TransactionResponse)
@@ -30,6 +33,43 @@ async def list_transactions(session: Session = Depends(get_db),
                             current_user: User = Depends(get_current_user)):
     transactions = session.query(Transaction).filter(Transaction.user_id == current_user.id).all()
     return transactions
+
+@router.get("/summary", status_code=200, response_model=MonthlySummaryResponse)
+def get_monthly_summary(session: Session = Depends(get_db),
+                            current_user: User = Depends(get_current_user)):
+        today = date.today()
+        first_day_of_month = date(today.year, today.month, 1)
+        _, days_in_month = calendar.monthrange(today.year, today.month)
+        last_day_of_month = date(today.year, today.month, days_in_month)
+        stmt = select(
+            func.coalesce(
+                func.sum(
+                    case((Transaction.type == TransactionType.CREDIT, Transaction.amount), else_=0)
+                ),
+                0
+            ).label("total_earned"),
+            func.coalesce(
+                func.sum(
+                    case((Transaction.type == TransactionType.DEBIT, Transaction.amount), else_=0)
+                ),
+                0
+            ).label("total_spent")
+        ).where(
+            Transaction.user_id == current_user.id,
+            Transaction.transaction_date >= first_day_of_month,
+            Transaction.transaction_date <= last_day_of_month
+        )
+        row = session.execute(stmt).fetchone()
+
+        total_earned = row.total_earned
+        total_spent = row.total_spent
+        net_balance = total_earned - total_spent
+
+        return {
+            "total_earned": total_earned,
+            "total_spent": total_spent,
+            "net": net_balance
+        }
 
 @router.get("/{id}", status_code=200 , response_model=TransactionResponse)
 async def get_transaction(id: int, session: Session=Depends(get_db),
