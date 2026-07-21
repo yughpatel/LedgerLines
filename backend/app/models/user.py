@@ -14,3 +14,4 @@ class User(Base):
     # Named "hashed_password" so it's obvious this is never raw.
     hashed_password: Mapped[str] = mapped_column(String(255))
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="user")
+    categories: Mapped[list["Category"]] = relationship("Category", back_populates="user")

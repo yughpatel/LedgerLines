@@ -51,6 +51,10 @@ export function getTransactions(token) {
   return request("/transactions", { token });
 }
 
+export function getSummary(token) {
+  return request("/transactions/summary", { token });
+}
+
 export function createTransaction(token, data) {
   return request("/transactions", { method: "POST", token, body: data });
 }

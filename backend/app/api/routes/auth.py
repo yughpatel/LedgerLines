@@ -4,8 +4,6 @@ from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.models.user import User
 from app.db.session import get_db
 from app.auth.security import hash_password, verify_password, create_access_token, get_current_user
-
-
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

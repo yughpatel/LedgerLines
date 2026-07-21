@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes.auth import router as auth_router
 from app.api.routes.transaction import router as transaction_router
+from app.api.routes.category import router as category_router
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="LedgerLines", version="0.1.0")
 
@@ -14,6 +15,9 @@ app.include_router(auth_router)
 
 # Include all transaction routes
 app.include_router(transaction_router)
+
+# Include all category routes
+app.include_router(category_router)
 
 @app.get("/")
 async def root():
