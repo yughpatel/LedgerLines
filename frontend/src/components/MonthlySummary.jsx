@@ -38,7 +38,7 @@ function SkeletonCard() {
   );
 }
 
-export default function MonthlySummary({ token }) {
+export default function MonthlySummary({ token, refreshKey = 0 }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,7 +52,7 @@ export default function MonthlySummary({ token }) {
       .catch((err) => { if (!cancelled) setError(err.message || "Failed to load summary."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, refreshKey]);
 
   if (loading) {
     return (

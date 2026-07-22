@@ -33,6 +33,7 @@ export default function TransactionList({ token, onLogout }) {
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [summaryVersion, setSummaryVersion] = useState(0);
 
   async function load() {
     setError("");
@@ -67,6 +68,7 @@ export default function TransactionList({ token, onLogout }) {
   function handleSaved() {
     closeForm();
     load();
+    setSummaryVersion((v) => v + 1);
   }
 
   async function handleDelete() {
@@ -76,6 +78,7 @@ export default function TransactionList({ token, onLogout }) {
       await deleteTransaction(token, confirmDelete.id);
       setConfirmDelete(null);
       load();
+      setSummaryVersion((v) => v + 1);
     } catch (err) {
       setError(err.message || "Failed to delete transaction.");
     } finally {
@@ -108,7 +111,7 @@ export default function TransactionList({ token, onLogout }) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-        <MonthlySummary token={token} />
+        <MonthlySummary token={token} refreshKey={summaryVersion} />
 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-800">Transactions</h2>
@@ -158,7 +161,9 @@ export default function TransactionList({ token, onLogout }) {
                       <tr key={tx.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 text-slate-500">#{tx.id}</td>
                         <td className="px-4 py-3 text-slate-700">{formatDate(tx.transaction_date)}</td>
-                        <td className="px-4 py-3 text-slate-700">{tx.category}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {tx.category?.name ?? <span className="text-slate-400">—</span>}
+                        </td>
                         <td className="px-4 py-3">
                           <span
                             className={
@@ -230,7 +235,7 @@ export default function TransactionList({ token, onLogout }) {
             <h3 className="text-lg font-semibold text-slate-800">Delete transaction?</h3>
             <p className="text-sm text-slate-600 mt-2">
               This will permanently delete transaction #{confirmDelete.id}
-              {confirmDelete.category ? ` — ${confirmDelete.category}` : ""}. This action cannot be
+              {confirmDelete.category?.name ? ` — ${confirmDelete.category.name}` : ""}. This action cannot be
               undone.
             </p>
             <div className="flex justify-end gap-2 mt-5">

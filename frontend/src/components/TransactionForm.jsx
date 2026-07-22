@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createTransaction, updateTransaction } from "../api";
+import { createTransaction, getCategories, updateTransaction } from "../api";
 
 function toLocalInputValue(iso) {
   if (!iso) return "";
@@ -23,7 +23,12 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
   const [amount, setAmount] = useState(
     transaction?.amount !== undefined ? String(transaction.amount) : ""
   );
-  const [category, setCategory] = useState(transaction?.category || "");
+  const [categoryId, setCategoryId] = useState(
+    transaction?.category?.id != null ? String(transaction.category.id) : ""
+  );
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState("");
   const [description, setDescription] = useState(transaction?.description || "");
   const [dateInput, setDateInput] = useState(
     transaction?.transaction_date
@@ -42,6 +47,24 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setCategoriesLoading(true);
+    setCategoriesError("");
+    getCategories(token)
+      .then((data) => {
+        if (cancelled) return;
+        setCategories(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (!cancelled) setCategoriesError(err.message || "Failed to load categories.");
+      })
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [token]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -52,7 +75,7 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
       setError("Amount must be a positive number.");
       return;
     }
-    if (!category.trim()) {
+    if (!categoryId) {
       setError("Category is required.");
       return;
     }
@@ -64,7 +87,7 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
     const payload = {
       type,
       amount: amt,
-      category: category.trim(),
+      category_id: Number(categoryId),
       description: description.trim() || null,
       transaction_date: new Date(dateInput).toISOString(),
     };
@@ -135,13 +158,28 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Groceries, Salary, Rent…"
-            />
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              disabled={categoriesLoading || !!categoriesError}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+            >
+              <option value="">
+                {categoriesLoading
+                  ? "Loading categories…"
+                  : categories.length === 0
+                    ? "No categories available"
+                    : "Select a category"}
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {categoriesError && (
+              <p className="mt-1 text-xs text-red-600">{categoriesError}</p>
+            )}
           </div>
 
           <div>
