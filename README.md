@@ -104,31 +104,46 @@ The backend is written in **FastAPI** with **PostgreSQL**, and the frontend is a
 LedgerLines/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI app entrypoint, CORS config
-│   │   ├── database.py          # DB engine/session setup
-│   │   ├── models/               # SQLAlchemy models (User, Transaction, Category, ...)
-│   │   ├── schemas/               # Pydantic request/response schemas
-│   │   ├── routes/                 # API route definitions (auth, transactions, ...)
-│   │   ├── auth.py                  # JWT creation/validation, password hashing
-│   │   └── dependencies.py           # Reusable FastAPI dependencies (e.g. get_current_user)
-│   ├── alembic/                    # Migration environment
-│   │   └── versions/               # Individual migration files
+│   │   ├── main.py                    # FastAPI app entrypoint, CORS config
+│   │   ├── api/
+│   │   │   └── routes/
+│   │   │       ├── auth.py            # Signup/login endpoints
+│   │   │       ├── transaction.py     # Transaction CRUD + summary endpoints
+│   │   │       └── category.py        # Category endpoints
+│   │   ├── auth/
+│   │   │   └── security.py            # Password hashing, JWT creation/validation
+│   │   ├── core/
+│   │   │   └── config.py              # App settings, env var loading
+│   │   ├── db/
+│   │   │   └── session.py             # DB engine/session setup
+│   │   ├── models/
+│   │   │   ├── user.py                # User model
+│   │   │   ├── transaction.py         # Transaction model
+│   │   │   └── category.py            # Category model
+│   │   └── schemas/
+│   │       ├── user.py                # Pydantic schemas for User/auth
+│   │       └── transaction.py         # Pydantic schemas for Transaction
+│   ├── alembic/                       # Migration environment
+│   │   └── versions/                  # Individual migration files
 │   ├── requirements.txt
 │   ├── alembic.ini
-│   └── venv/                        # Local virtual environment (not committed)
+│   └── venv/                          # Local virtual environment (not committed)
 ├── frontend/
 │   ├── src/
+│   │   ├── assets/                    # Static assets (images, icons)
 │   │   ├── components/
 │   │   │   ├── Auth.jsx
 │   │   │   ├── TransactionList.jsx
 │   │   │   ├── TransactionForm.jsx
-│   │   │   ├── MonthlySummary.jsx
-│   │   │   └── DeleteModal.jsx
+│   │   │   └── MonthlySummary.jsx
+│   │   ├── api.js                     # API client, request helpers
 │   │   ├── App.jsx
-│   │   └── main.jsx
+│   │   ├── App.css
+│   │   ├── main.jsx
+│   │   └── index.css
 │   ├── package.json
 │   └── vite.config.js
-├── docs/                             # (planned) architecture notes, test reports
+├── docs/                              # (planned) architecture notes, test reports
 ├── .gitignore
 └── README.md
 ```
