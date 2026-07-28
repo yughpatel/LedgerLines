@@ -1,24 +1,21 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from app.core.config import settings
+from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
-
+from app.models.refresh_token import RefreshToken  # Adjust based on your file structure
 # Use bcrypt to resist brute-force and GPU-accelerated cracking attacks.
 # 'deprecated="auto" flag marks outdated hashes for automatic updating in case of changing algorithms.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
-
 # Hash the plain password again and compare to the stored hash. We never decrypt (hashing only works one way).
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
-
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """
      Create a JWT token containing user data.
@@ -28,35 +25,54 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
-
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
-
-    to_encode.update({"exp": expire})
-
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
-
+def create_refresh_token(db: Session, user_id: int) -> str:
+    """
+    Generates a raw JWT refresh token, hashes it, saves the hash
+    to the database, and returns the unhashed raw token string.
+    """
+    # 1. Build the JWT payload
+    # Note: Explicitly using UTC timezone ensures consistency across servers
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=settings.refresh_token_expire_days)
+    payload = {
+        "sub": str(user_id),
+        "exp": expires_at,
+        "type": "refresh"  # Explicitly label token type to prevent mix-ups with access tokens
+    }
+    # 2. Encode into a raw JWT string
+    raw_refresh_token = jwt.encode(payload, settings.refresh_token_secret_key, algorithm=settings.algorithm)
+    # 3. Hash that raw string
+    token_hash = pwd_context.hash(raw_refresh_token)
+    # 4. Save a new row to the refresh_tokens table
+    db_refresh_token = RefreshToken(
+        user_id=user_id,
+        token_hash=token_hash,
+        expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+    db.commit()
+    # 5. Return the raw, unhashed JWT string
+    return raw_refresh_token
 def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(get_db)):
     """Extract and validate JWT token from the Authorization header.
     Returns the user ID if token is valid. Raises 401 if token is invalid, missing or expired."""
-
     try:
         # Decoding the JWT using secret_key and algorithm, To verify the signature and check expiration
         payload = jwt.decode(token.credentials, settings.secret_key, algorithms=[settings.algorithm])
-
         # Extract User ID from the payload
         user_id: str = payload.get("sub")
-
+        token_type: str = payload.get("type")
         # If "sub" field is missing, the token is malformed
-        if user_id is None:
+        if user_id is None or token_type == "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
     current_user = db.query(User).filter(User.id == int(user_id)).first()
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
-
     return current_user
