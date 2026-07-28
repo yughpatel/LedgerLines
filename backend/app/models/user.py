@@ -15,3 +15,5 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="user")
     categories: Mapped[list["Category"]] = relationship("Category", back_populates="user")
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship("RefreshToken", back_populates="user",
+                                                                cascade="all, delete-orphan")
