@@ -18,7 +18,7 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
 
     # NULL = system default category, a value = that user's custom category
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
 
     # Bidirectional relationships
     user: Mapped[Optional["User"]] = relationship("User", back_populates="categories")
