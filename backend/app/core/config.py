@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     refresh_token_secret_key: str
     refresh_token_expire_days: int
+    environment: str = "development"
 
     # Tells Pydantic to read configuration variables from a local '.env' file
     class Config:
