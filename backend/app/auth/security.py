@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
-from app.models.refresh_token import RefreshToken  # Adjust based on your file structure
+from app.models.refresh_token import RefreshToken
 # Use bcrypt to resist brute-force and GPU-accelerated cracking attacks.
 # 'deprecated="auto" flag marks outdated hashes for automatic updating in case of changing algorithms.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -76,3 +76,73 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return current_user
+
+def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)):
+    """
+      Decodes the raw refresh token, validates its integrity,
+      verifies it against active database hashes, and returns the User.
+      """
+    # 1. Decode and validate the JWT signature and basic constraints
+    try:
+        payload = jwt.decode(
+            raw_token,
+            settings.refresh_token_secret_key,
+            algorithms=[settings.algorithm]
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 2. Extract and validate payload claims
+    user_id = payload.get("sub")
+    token_type = payload.get("type")
+
+    if not user_id or token_type != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload claims",
+        )
+
+    # 3. Query active, unrevoked database tokens for this user
+    active_tokens = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.user_id == int(user_id), RefreshToken.revoked == False)
+        .all()
+    )
+
+    # 4. Linearly verify the raw string against stored database hashes
+    matched_token_record = None
+    for row in active_tokens:
+        if pwd_context.verify(raw_token, row.token_hash):
+            matched_token_record = row
+            break
+
+    if not matched_token_record:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token not found or revoked",
+        )
+
+    # 5. DB-Level Expiration Check Analysis
+    # The JWT 'exp' claim is validated during jwt.decode() automatically.
+    # Checking row.expires_at against datetime.now(timezone.utc) catches:
+    # - Administrative updates where an admin manually shortens validity in the DB.
+    # - Changes to token lifespan settings that are retroactively enforced via DB updates.
+    if matched_token_record.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired in database records",
+        )
+
+    # 6. Fetch and return the authenticated user object
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User associated with this token no longer exists",
+        )
+
+    return user
