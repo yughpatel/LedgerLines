@@ -45,15 +45,15 @@ async def login_user(user: UserLogin, response: Response, db: Session = Depends(
     # Determine cookie security based on environment setting
     is_production = settings.environment == "production"
 
-    # Set refresh token as an HTTP-only cookie
+    # Set refresh token as an HTTP-only cookie scoped to /auth
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         secure=is_production,
         samesite="lax",
-        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,  # Fixed lowercase case-sensitivity bug
-        path="/auth/refresh"
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        path="/auth"
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
@@ -75,11 +75,37 @@ async def refresh_token_route(
             detail="Refresh token missing"
         )
 
-    # Validate the token using the correct argument position (raw_token first, db second)
-    # This will internally raise an HTTPException if validation or user lookup fails
-    user = verify_refresh_token(refresh_token, db)
+    # Validate the token using the correct argument position
+    user, _ = verify_refresh_token(refresh_token, db)
 
     # Generate a brand new access token for the authenticated user
     new_access_token = create_access_token(data={"sub": str(user.id)})
 
     return {"access_token": new_access_token, "token_type": "bearer"}
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(
+    response: Response,
+    db: Session = Depends(get_db),
+    refresh_token: str | None = Cookie(default=None)
+):
+    # If no refresh token cookie exists, clear the cookie using the exact matching path scope
+    if not refresh_token:
+        response.delete_cookie(key="refresh_token", path="/auth")
+        return {"detail": "Successfully logged out"}
+
+    try:
+        user, token_row = verify_refresh_token(refresh_token, db)
+        token_row.revoked = True
+        db.commit()
+
+    except HTTPException:
+        pass
+
+    # Clear the refresh token cookie from the browser using the exact matching path scope
+    response.delete_cookie(
+        key="refresh_token",
+        path="/auth"
+    )
+
+    return {"detail": "Successfully logged out"}
