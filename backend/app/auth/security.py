@@ -77,11 +77,11 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return current_user
 
-def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)):
+def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple[User, RefreshToken]:
     """
-      Decodes the raw refresh token, validates its integrity,
-      verifies it against active database hashes, and returns the User.
-      """
+    Decodes the raw refresh token, validates its integrity,
+    verifies it against active database hashes, and returns the User and RefreshToken record.
+    """
     # 1. Decode and validate the JWT signature and basic constraints
     try:
         payload = jwt.decode(
@@ -145,4 +145,5 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)):
             detail="User associated with this token no longer exists",
         )
 
-    return user
+    # CRUCIAL CHANGE: Return both the User and the matched DB record row
+    return user, matched_token_record

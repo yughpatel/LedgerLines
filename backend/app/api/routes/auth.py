@@ -1,15 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.models.user import User
 from app.db.session import get_db
-from app.auth.security import hash_password, verify_password, create_access_token, create_refresh_token, get_current_user, verify_refresh_token
+from app.auth.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    get_current_user,
+    verify_refresh_token
+)
 from app.core.config import settings
+from app.core.limiter import limiter  # FIXED: Pointing to the correct app.core.limiter module
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("2/minute")  # Target limit for registration
+async def create_user(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -32,7 +41,8 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
-async def login_user(user: UserLogin, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")  # FIXED: Restored to your proven 5/minute limit
+async def login_user(request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)):
     # Check if user exists and password is correct
     existing_user = db.query(User).filter(User.email == user.email).first()
     if not existing_user or not verify_password(user.password, existing_user.hashed_password):
@@ -98,8 +108,8 @@ async def logout_user(
         user, token_row = verify_refresh_token(refresh_token, db)
         token_row.revoked = True
         db.commit()
-
-    except HTTPException:
+    except HTTPException as e:
+        print(f"DEBUG: verify_refresh_token failed with: {e.detail}")
         pass
 
     # Clear the refresh token cookie from the browser using the exact matching path scope
