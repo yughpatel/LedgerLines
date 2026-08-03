@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, MonthlySummaryResponse
-from app.models.transaction import Transaction, TransactionType
-from app.models.category import Category  # Imported to run category access validation checks
+from app.schemas.transaction import TransactionUpdate, TransactionResponse, MonthlySummaryResponse
+from app.models.transaction import Transaction, TransactionType, TransactionCreateRequest
+from app.models.category import Category
 from app.db.session import get_db
 from app.auth.security import get_current_user
 from app.models.user import User
 import calendar
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy import func, select, case, or_
 
 router = APIRouter(prefix="/transactions", tags=["transaction"])
 
-@router.post("", status_code=201, response_model=TransactionResponse)
-async def create_transaction(data: TransactionCreate, session: Session=Depends(get_db),
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=TransactionResponse)
+async def create_transaction(data: TransactionCreateRequest, session: Session=Depends(get_db),
                              current_user: User=Depends(get_current_user)):
     category_exists = session.query(Category).filter(
         Category.id == data.category_id,
@@ -38,7 +38,7 @@ async def create_transaction(data: TransactionCreate, session: Session=Depends(g
     session.refresh(new_transaction)
     return new_transaction
 
-@router.get("", status_code=200, response_model=list[TransactionResponse])
+@router.get("", status_code=status.HTTP_200_OK, response_model=list[TransactionResponse])
 async def list_transactions(session: Session = Depends(get_db),
                             current_user: User = Depends(get_current_user)):
     transactions = session.query(Transaction).filter(
@@ -46,44 +46,49 @@ async def list_transactions(session: Session = Depends(get_db),
     ).order_by(Transaction.transaction_date.desc()).all()
     return transactions
 
-@router.get("/summary", status_code=200, response_model=MonthlySummaryResponse)
+@router.get("/summary", status_code=status.HTTP_200_OK, response_model=MonthlySummaryResponse)
 def get_monthly_summary(session: Session = Depends(get_db),
-                            current_user: User = Depends(get_current_user)):
-        today = date.today()
-        first_day_of_month = date(today.year, today.month, 1)
-        _, days_in_month = calendar.monthrange(today.year, today.month)
-        last_day_of_month = date(today.year, today.month, days_in_month)
-        stmt = select(
-            func.coalesce(
-                func.sum(
-                    case((Transaction.type == TransactionType.CREDIT, Transaction.amount), else_=0)
-                ),
-                0
-            ).label("total_earned"),
-            func.coalesce(
-                func.sum(
-                    case((Transaction.type == TransactionType.DEBIT, Transaction.amount), else_=0)
-                ),
-                0
-            ).label("total_spent")
-        ).where(
-            Transaction.user_id == current_user.id,
-            Transaction.transaction_date >= first_day_of_month,
-            Transaction.transaction_date <= last_day_of_month
-        )
-        row = session.execute(stmt).fetchone()
+                        current_user: User = Depends(get_current_user)):
+    today = date.today()
 
-        total_earned = row.total_earned
-        total_spent = row.total_spent
-        net_balance = total_earned - total_spent
+    # Establish strict timezone-aware boundaries using a half-open interval
+    start_of_month = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
+    if today.month == 12:
+        start_of_next_month = datetime(today.year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        start_of_next_month = datetime(today.year, today.month + 1, 1, tzinfo=timezone.utc)
 
-        return {
-            "total_earned": total_earned,
-            "total_spent": total_spent,
-            "net": net_balance
-        }
+    stmt = select(
+        func.coalesce(
+            func.sum(
+                case((Transaction.type == TransactionType.CREDIT, Transaction.amount), else_=0)
+            ),
+            0
+        ).label("total_earned"),
+        func.coalesce(
+            func.sum(
+                case((Transaction.type == TransactionType.DEBIT, Transaction.amount), else_=0)
+            ),
+            0
+        ).label("total_spent")
+    ).where(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_date >= start_of_month,
+        Transaction.transaction_date < start_of_next_month
+    )
+    row = session.execute(stmt).fetchone()
 
-@router.get("/{id}", status_code=200 , response_model=TransactionResponse)
+    total_earned = row.total_earned
+    total_spent = row.total_spent
+    net_balance = total_earned - total_spent
+
+    return {
+        "total_earned": total_earned,
+        "total_spent": total_spent,
+        "net": net_balance
+    }
+
+@router.get("/{id}", status_code=status.HTTP_200_OK, response_model=TransactionResponse)
 async def get_transaction(id: int, session: Session=Depends(get_db),
                           current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(
@@ -95,7 +100,7 @@ async def get_transaction(id: int, session: Session=Depends(get_db),
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transaction
 
-@router.put("/{id}", status_code=200, response_model=TransactionResponse)
+@router.put("/{id}", status_code=status.HTTP_200_OK, response_model=TransactionResponse)
 async def update_transaction(id: int, data: TransactionUpdate, session: Session=Depends(get_db),
                              current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(
@@ -107,6 +112,10 @@ async def update_transaction(id: int, data: TransactionUpdate, session: Session=
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     update_data = data.model_dump(exclude_unset=True)
+
+    # Protect against malicious mass-assignment tampering
+    update_data.pop("user_id", None)
+    update_data.pop("id", None)
 
     if "category_id" in update_data:
         category_exists = session.query(Category).filter(
@@ -125,7 +134,7 @@ async def update_transaction(id: int, data: TransactionUpdate, session: Session=
     session.refresh(transaction)
     return transaction
 
-@router.delete("/{id}", status_code=204)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_transaction(id: int, session: Session = Depends(get_db),
                              current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(

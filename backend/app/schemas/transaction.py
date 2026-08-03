@@ -1,8 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
-# Single source of truth: imported from models to prevent code drift if a new type (like TRANSFER) is added later
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.transaction import TransactionType
 
 class CategoryResponse(BaseModel):
@@ -11,16 +10,6 @@ class CategoryResponse(BaseModel):
 
     # To allow direct parsing from database ORM objects
     model_config = ConfigDict(from_attributes=True)
-
-
-# No id field here: the database assigns the ID via autoincrement=True at insert time; the client never sends one
-class TransactionCreate(BaseModel):
-    type: TransactionType
-    amount: Decimal
-    # Replaces legacy 'category: str' with deterministic input id
-    category_id: int
-    description: Optional[str] = None
-    transaction_date: datetime
 
 
 class TransactionResponse(BaseModel):
@@ -39,11 +28,32 @@ class TransactionResponse(BaseModel):
 
 class TransactionUpdate(BaseModel):
     type: Optional[TransactionType] = None
-    amount: Optional[Decimal] = None
+    # If provided, the amount must be greater than 0 and fit within structural constraints
+    amount: Optional[Decimal] = Field(default=None, gt=0, max_digits=10)
     # Optional wrapper allows partial updates without forcing category changes
     category_id: Optional[int] = None
     description: Optional[str] = None
     transaction_date: Optional[datetime] = None
+
+    @field_validator("amount")
+    @classmethod
+    def validate_strict_scale(cls, value: Optional[Decimal]) -> Optional[Decimal]:
+        if value is not None:
+            # Prevent silent rounding by verifying no fractional remainder exists past 2 decimal places
+            if (value * 100) % 1 != 0:
+                raise ValueError("Amount cannot have more than 2 decimal places.")
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("Description cannot be empty or just whitespace.")
+            return stripped
+        return value
+
 
 class MonthlySummaryResponse(BaseModel):
     total_earned: Decimal
