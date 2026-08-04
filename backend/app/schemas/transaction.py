@@ -3,14 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.transaction import TransactionType
-
-class CategoryResponse(BaseModel):
-    id: int
-    name: str
-
-    # To allow direct parsing from database ORM objects
-    model_config = ConfigDict(from_attributes=True)
-
+from app.schemas.category import CategoryResponse
 
 class TransactionResponse(BaseModel):
     id: int
