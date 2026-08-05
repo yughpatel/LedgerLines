@@ -12,9 +12,10 @@ from app.auth.security import (
     verify_refresh_token
 )
 from app.core.config import settings
-from app.core.limiter import limiter  # FIXED: Pointing to the correct app.core.limiter module
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("2/minute")  # Target limit for registration
@@ -22,15 +23,20 @@ async def create_user(request: Request, user: UserCreate, db: Session = Depends(
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        # Intentional tradeoff: Email enumeration risk accepted until email infra (SendGrid/SES) is implemented.
+        # 409 Conflict provides necessary UX feedback so users aren't stranded in a blind failure loop.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered"
+        )
 
     # Hash password before storing
     hashed_password = hash_password(user.password)
 
     # Creating new user instance
     new_user = User(
-        email = user.email,
-        hashed_password = hashed_password
+        email=user.email,
+        hashed_password=hashed_password
     )
 
     # Saving to database
@@ -40,8 +46,9 @@ async def create_user(request: Request, user: UserCreate, db: Session = Depends(
 
     return new_user
 
+
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
-@limiter.limit("5/minute")  # FIXED: Restored to your proven 5/minute limit
+@limiter.limit("5/minute")
 async def login_user(request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)):
     # Check if user exists and password is correct
     existing_user = db.query(User).filter(User.email == user.email).first()
@@ -68,15 +75,17 @@ async def login_user(request: Request, user: UserLogin, response: Response, db: 
 
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/me")
+
+@router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current authenticated user info."""
     return current_user
 
+
 @router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
 async def refresh_token_route(
-    db: Session = Depends(get_db),
-    refresh_token: str | None = Cookie(default=None)
+        db: Session = Depends(get_db),
+        refresh_token: str | None = Cookie(default=None)
 ):
     # Check if the refresh token cookie is present in the request
     if not refresh_token:
@@ -93,11 +102,12 @@ async def refresh_token_route(
 
     return {"access_token": new_access_token, "token_type": "bearer"}
 
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout_user(
-    response: Response,
-    db: Session = Depends(get_db),
-    refresh_token: str | None = Cookie(default=None)
+        response: Response,
+        db: Session = Depends(get_db),
+        refresh_token: str | None = Cookie(default=None)
 ):
     # If no refresh token cookie exists, clear the cookie using the exact matching path scope
     if not refresh_token:
@@ -108,8 +118,8 @@ async def logout_user(
         user, token_row = verify_refresh_token(refresh_token, db)
         token_row.revoked = True
         db.commit()
-    except HTTPException as e:
-        print(f"DEBUG: verify_refresh_token failed with: {e.detail}")
+    except HTTPException:
+        # Silently pass on invalid tokens during logout
         pass
 
     # Clear the refresh token cookie from the browser using the exact matching path scope
