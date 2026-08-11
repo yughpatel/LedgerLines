@@ -17,13 +17,16 @@ function Card({ label, value, tone }) {
     red: "text-red-600",
     blue: "text-blue-600",
   };
+  const n = Number(value);
+  const isNegative = Number.isFinite(n) && n < 0;
+  const displayValue = isNegative ? Math.abs(n) : value;
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
       <p className="text-xs uppercase tracking-wide text-slate-500 font-medium">
         {label}
       </p>
       <p className={"mt-2 text-2xl font-semibold tabular-nums " + (tones[tone] || "text-slate-800")}>
-        ₹{formatINR(value)}
+        {isNegative ? "−" : ""}₹{formatINR(displayValue)}
       </p>
     </div>
   );
