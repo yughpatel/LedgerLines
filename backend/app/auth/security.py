@@ -35,7 +35,7 @@ def create_refresh_token(db: Session, user_id: int) -> str:
     Generates a raw JWT refresh token, hashes it, saves the hash
     to the database, and returns the unhashed raw token string.
     """
-    # 1. Build the JWT payload
+    # Build the JWT payload
     # Note: Explicitly using UTC timezone ensures consistency across servers
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(days=settings.refresh_token_expire_days)
@@ -44,11 +44,11 @@ def create_refresh_token(db: Session, user_id: int) -> str:
         "exp": expires_at,
         "type": "refresh"  # Explicitly label token type to prevent mix-ups with access tokens
     }
-    # 2. Encode into a raw JWT string
+    # Encode into a raw JWT string
     raw_refresh_token = jwt.encode(payload, settings.refresh_token_secret_key, algorithm=settings.algorithm)
-    # 3. Hash that raw string
+    # Hash that raw string
     token_hash = pwd_context.hash(raw_refresh_token)
-    # 4. Save a new row to the refresh_tokens table
+    # Save a new row to the refresh_tokens table
     db_refresh_token = RefreshToken(
         user_id=user_id,
         token_hash=token_hash,
@@ -56,7 +56,7 @@ def create_refresh_token(db: Session, user_id: int) -> str:
     )
     db.add(db_refresh_token)
     db.commit()
-    # 5. Return the raw, unhashed JWT string
+    # Return the raw, unhashed JWT string
     return raw_refresh_token
 def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(get_db)):
     """Extract and validate JWT token from the Authorization header.
@@ -82,7 +82,7 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
     Decodes the raw refresh token, validates its integrity,
     verifies it against active database hashes, and returns the User and RefreshToken record.
     """
-    # 1. Decode and validate the JWT signature and basic constraints
+    # Decode and validate the JWT signature and basic constraints
     try:
         payload = jwt.decode(
             raw_token,
@@ -96,7 +96,7 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 2. Extract and validate payload claims
+    # Extract and validate payload claims
     user_id = payload.get("sub")
     token_type = payload.get("type")
 
@@ -106,14 +106,14 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Invalid token payload claims",
         )
 
-    # 3. Query active, unrevoked database tokens for this user
+    # Query active, unrevoked database tokens for this user
     active_tokens = (
         db.query(RefreshToken)
         .filter(RefreshToken.user_id == int(user_id), RefreshToken.revoked == False)
         .all()
     )
 
-    # 4. Linearly verify the raw string against stored database hashes
+    # Linearly verify the raw string against stored database hashes
     matched_token_record = None
     for row in active_tokens:
         if pwd_context.verify(raw_token, row.token_hash):
@@ -126,7 +126,7 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Refresh token not found or revoked",
         )
 
-    # 5. DB-Level Expiration Check Analysis
+    # DB-Level Expiration Check Analysis
     # The JWT 'exp' claim is validated during jwt.decode() automatically.
     # Checking row.expires_at against datetime.now(timezone.utc) catches:
     # - Administrative updates where an admin manually shortens validity in the DB.
@@ -137,7 +137,7 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Refresh token has expired in database records",
         )
 
-    # 6. Fetch and return the authenticated user object
+    # Fetch and return the authenticated user object
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(
@@ -145,5 +145,5 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="User associated with this token no longer exists",
         )
 
-    # CRUCIAL CHANGE: Return both the User and the matched DB record row
+    # Return both the User and the matched DB record row
     return user, matched_token_record
