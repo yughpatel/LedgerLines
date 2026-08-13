@@ -19,6 +19,36 @@ class TransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TransactionCreateRequest(BaseModel):
+    # Core transaction details
+    transaction_date: datetime
+    type: TransactionType
+    amount: Decimal = Field(gt=0, max_digits=10)
+
+    # Foreign key to category (ondelete removed)
+    category_id: int
+
+    description: Optional[str] = None
+
+    @field_validator("amount")
+    @classmethod
+    def validate_strict_scale(cls, value: Decimal) -> Decimal:
+        # Prevent silent rounding by verifying no fractional remainder exists past 2 decimal places
+        if (value * 100) % 1 != 0:
+            raise ValueError("Amount cannot have more than 2 decimal places.")
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("Description cannot be empty or just whitespace.")
+            return stripped
+        return value
+
+
 class TransactionUpdate(BaseModel):
     type: Optional[TransactionType] = None
     # If provided, the amount must be greater than 0 and fit within structural constraints
