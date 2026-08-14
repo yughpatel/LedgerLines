@@ -2,27 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.transaction import TransactionUpdate, TransactionResponse, MonthlySummaryResponse, TransactionCreateRequest
 from app.models.transaction import Transaction, TransactionType
-from app.models.category import Category
 from app.db.session import get_db
 from app.auth.security import get_current_user
 from app.models.user import User
+from app.services.category import validate_category
 import calendar
 from datetime import date, datetime, timezone
 from decimal import Decimal
-from sqlalchemy import func, select, case, or_
+from sqlalchemy import func, select, case
 
 router = APIRouter(prefix="/transactions", tags=["transaction"])
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=TransactionResponse)
 async def create_transaction(data: TransactionCreateRequest, session: Session=Depends(get_db),
                              current_user: User=Depends(get_current_user)):
-    category_exists = session.query(Category).filter(
-        Category.id == data.category_id,
-        or_(Category.user_id == current_user.id, Category.user_id.is_(None))
-    ).first()
-
-    if not category_exists:
-        raise HTTPException(status_code=400, detail="Invalid category_id. Category does not exist or access denied.")
+    validate_category(data.category_id, current_user.id, session)
 
     new_transaction = Transaction(
         user_id = current_user.id,
@@ -118,13 +112,7 @@ async def update_transaction(id: int, data: TransactionUpdate, session: Session=
     update_data.pop("id", None)
 
     if "category_id" in update_data:
-        category_exists = session.query(Category).filter(
-            Category.id == update_data["category_id"],
-            or_(Category.user_id == current_user.id, Category.user_id.is_(None))
-        ).first()
-
-        if not category_exists:
-            raise HTTPException(status_code=400, detail="Invalid category_id. Category does not exist or access denied.")
+        validate_category(update_data["category_id"], current_user.id, session)
 
     for key, value in update_data.items():
         setattr(transaction, key, value)
