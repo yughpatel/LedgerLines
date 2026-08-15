@@ -1,9 +1,31 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.transaction import TransactionType
 from app.schemas.category import CategoryResponse
+
+# Product doesn't support backfilling history earlier than this
+LOWEST_ALLOWED_TRANSACTION_DATE = datetime(2020, 1, 1, tzinfo=timezone.utc)
+
+
+def validate_transaction_date(value: datetime) -> datetime:
+    # Reject naive datetimes so timezone semantics are unambiguous at storage
+    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+        raise ValueError("transaction_date must include a timezone offset (e.g. 'Z' or '+05:30').")
+
+    # Reject anything before 2020 — product doesn't support backfilling that far
+    if value < LOWEST_ALLOWED_TRANSACTION_DATE:
+        raise ValueError("transaction_date cannot be earlier than 2020-01-01.")
+
+    # Reject future-dated transactions until recurring transactions ship;
+    # small tolerance for user-clock skew so a slightly-fast laptop doesn't 422 legitimate "now" entries
+    now = datetime.now(timezone.utc)
+    if value > now + timedelta(minutes=1):
+        raise ValueError("transaction_date cannot be in the future; future-dated transactions are not allowed yet.")
+
+    return value
+
 
 class TransactionResponse(BaseModel):
     id: int
@@ -48,6 +70,11 @@ class TransactionCreateRequest(BaseModel):
             return stripped
         return value
 
+    @field_validator("transaction_date")
+    @classmethod
+    def validate_date(cls, value: datetime) -> datetime:
+        return validate_transaction_date(value)
+
 
 class TransactionUpdate(BaseModel):
     type: Optional[TransactionType] = None
@@ -75,6 +102,13 @@ class TransactionUpdate(BaseModel):
             if not stripped:
                 raise ValueError("Description cannot be empty or just whitespace.")
             return stripped
+        return value
+
+    @field_validator("transaction_date")
+    @classmethod
+    def validate_date(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is not None:
+            return validate_transaction_date(value)
         return value
 
 
