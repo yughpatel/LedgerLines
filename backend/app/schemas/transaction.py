@@ -8,6 +8,9 @@ from app.schemas.category import CategoryResponse
 # Product doesn't support backfilling history earlier than this
 LOWEST_ALLOWED_TRANSACTION_DATE = datetime(2020, 1, 1, tzinfo=timezone.utc)
 
+# Product cap — no single transaction can exceed ₹5,00,000
+MAX_TRANSACTION_AMOUNT = Decimal("500000")
+
 
 def validate_transaction_date(value: datetime) -> datetime:
     # Reject naive datetimes so timezone semantics are unambiguous at storage
@@ -45,7 +48,7 @@ class TransactionCreateRequest(BaseModel):
     # Core transaction details
     transaction_date: datetime
     type: TransactionType
-    amount: Decimal = Field(gt=0, max_digits=10)
+    amount: Decimal = Field(gt=0, le=MAX_TRANSACTION_AMOUNT, max_digits=10)
 
     # Foreign key to category (ondelete removed)
     category_id: int
@@ -79,7 +82,7 @@ class TransactionCreateRequest(BaseModel):
 class TransactionUpdate(BaseModel):
     type: Optional[TransactionType] = None
     # If provided, the amount must be greater than 0 and fit within structural constraints
-    amount: Optional[Decimal] = Field(default=None, gt=0, max_digits=10)
+    amount: Optional[Decimal] = Field(default=None, gt=0, le=MAX_TRANSACTION_AMOUNT, max_digits=10)
     # Optional wrapper allows partial updates without forcing category changes
     category_id: Optional[int] = None
     description: Optional[str] = None
