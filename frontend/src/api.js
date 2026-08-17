@@ -71,8 +71,15 @@ async function request(path, { method = "GET", token, body, _isRetry = false } =
   }
 
   if (!res.ok) {
+    // The rate limiter (slowapi) answers with {"error": "..."} instead of FastAPI's
+    // {"detail": ...}, so without its own branch this fell through to a bare status code.
+    if (res.status === 429) {
+      console.error(`[api] ${method} ${path} → 429`, data);
+      throw new Error("Too many attempts. Please wait a minute and try again.");
+    }
+
     const detail =
-      (data && (data.detail || data.message)) ||
+      (data && (data.detail || data.message || data.error)) ||
       (typeof data === "string" && data) ||
       `Request failed (${res.status})`;
     const message = Array.isArray(detail)
