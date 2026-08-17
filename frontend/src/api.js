@@ -27,6 +27,13 @@ function attemptRefresh() {
   return refreshInFlight;
 }
 
+// Pydantic prefixes custom-validator failures with "Value error, " — an internal
+// detail that shouldn't reach users.
+function stripValueErrorPrefix(msg) {
+  if (typeof msg !== "string") return msg;
+  return msg.replace(/^Value error,\s*/, "");
+}
+
 async function request(path, { method = "GET", token, body, _isRetry = false } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -83,8 +90,8 @@ async function request(path, { method = "GET", token, body, _isRetry = false } =
       (typeof data === "string" && data) ||
       `Request failed (${res.status})`;
     const message = Array.isArray(detail)
-      ? detail.map((d) => d.msg || JSON.stringify(d)).join("; ")
-      : String(detail);
+      ? detail.map((d) => stripValueErrorPrefix(d.msg) || JSON.stringify(d)).join("; ")
+      : stripValueErrorPrefix(String(detail));
     console.error(`[api] ${method} ${path} → ${res.status}`, data);
     throw new Error(message);
   }
