@@ -57,10 +57,22 @@ export default function MonthlySummary({ token, refreshKey = 0 }) {
     return () => { cancelled = true; };
   }, [token, refreshKey]);
 
+  // /transactions/summary covers only the current calendar month, so the period is
+  // named here — otherwise a transaction dated in another month looks like the
+  // summary silently failed to update.
+  const heading = (
+    <h2 className="text-lg font-medium text-slate-800 mb-3">
+      This month{" "}
+      <span className="text-sm font-normal text-slate-500">
+        · {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+      </span>
+    </h2>
+  );
+
   if (loading) {
     return (
       <section className="mb-6">
-        <h2 className="text-lg font-medium text-slate-800 mb-3">Summary</h2>
+        {heading}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <SkeletonCard />
           <SkeletonCard />
@@ -73,7 +85,7 @@ export default function MonthlySummary({ token, refreshKey = 0 }) {
   if (error) {
     return (
       <section className="mb-6">
-        <h2 className="text-lg font-medium text-slate-800 mb-3">Summary</h2>
+        {heading}
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </div>
@@ -90,7 +102,7 @@ export default function MonthlySummary({ token, refreshKey = 0 }) {
 
   return (
     <section className="mb-6">
-      <h2 className="text-lg font-medium text-slate-800 mb-3">Summary</h2>
+      {heading}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card label="Total Earned" value={summary?.total_earned ?? 0} tone="green" />
         <Card label="Total Spent" value={summary?.total_spent ?? 0} tone="red" />
