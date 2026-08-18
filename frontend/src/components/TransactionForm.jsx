@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { createTransaction, getCategories, updateTransaction } from "../api";
 
+// Mirrors the backend caps in app/schemas/transaction.py — backend stays authoritative,
+// these just save a round-trip and let the browser show the constraint in its picker.
+const MAX_TRANSACTION_AMOUNT = 500000;
+const MIN_DATE_INPUT = "2020-01-01T00:00";
+const MIN_TRANSACTION_DATE_MS = Date.UTC(2020, 0, 1);
+// Backend allows a 1-minute skew tolerance on the future check; match it so we
+// don't reject a timestamp the server would have accepted.
+const FUTURE_SKEW_MS = 60 * 1000;
+
 function toLocalInputValue(iso) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -35,6 +44,8 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
       ? toLocalInputValue(transaction.transaction_date)
       : defaultDateInput()
   );
+  // Captured once when the modal opens so the picker's ceiling doesn't drift mid-edit
+  const [maxDateInput] = useState(() => defaultDateInput());
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,12 +86,35 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
       setError("Amount must be a positive number.");
       return;
     }
+    if (amt > MAX_TRANSACTION_AMOUNT) {
+      setError("Amount cannot exceed ₹5,00,000 per transaction.");
+      return;
+    }
+    // Checked against the raw string so float rounding can't mask a third decimal
+    if (/\.\d{3,}/.test(amount)) {
+      setError("Amount cannot have more than 2 decimal places.");
+      return;
+    }
     if (!categoryId) {
       setError("Category is required.");
       return;
     }
     if (!dateInput) {
       setError("Date is required.");
+      return;
+    }
+
+    const dateMs = new Date(dateInput).getTime();
+    if (Number.isNaN(dateMs)) {
+      setError("Date is not valid.");
+      return;
+    }
+    if (dateMs < MIN_TRANSACTION_DATE_MS) {
+      setError("Date cannot be earlier than 2020-01-01.");
+      return;
+    }
+    if (dateMs > Date.now() + FUTURE_SKEW_MS) {
+      setError("Date cannot be in the future; future-dated transactions are not allowed yet.");
       return;
     }
 
@@ -148,6 +182,7 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
                 type="number"
                 step="0.01"
                 min="0"
+                max={MAX_TRANSACTION_AMOUNT}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -199,6 +234,8 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
             <label className="block text-sm font-medium text-slate-700 mb-1">Date & time</label>
             <input
               type="datetime-local"
+              min={MIN_DATE_INPUT}
+              max={maxDateInput}
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
