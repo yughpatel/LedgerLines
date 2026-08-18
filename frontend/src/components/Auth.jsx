@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { login, signup } from "../api";
 
+// Mirrors UserCreate in app/schemas/user.py — signup only; login has no complexity
+// requirement, so applying these there would lock out existing accounts.
+const PASSWORD_MAX_LENGTH = 20;
+const PASSWORD_RULES = [
+  { label: "8 to 20 characters", test: (v) => v.length >= 8 && v.length <= PASSWORD_MAX_LENGTH },
+  { label: "One uppercase letter", test: (v) => /[A-Z]/.test(v) },
+  { label: "One number", test: (v) => /\d/.test(v) },
+  // The accepted set is narrow and non-obvious, so it's spelled out for the user
+  { label: 'One special character  ! @ # $ % ^ & * ( ) , . ? " : { } | < >', test: (v) => /[!@#$%^&*(),.?":{}|<>]/.test(v) },
+];
+
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -26,9 +37,17 @@ export default function Auth({ onLogin }) {
       setError("Email and password are required.");
       return;
     }
-    if (isSignup && password !== confirm) {
-      setError("Passwords do not match.");
-      return;
+    if (isSignup) {
+      // The checklist below the field already shows which rules are unmet,
+      // so the banner only needs to say that something is outstanding
+      if (PASSWORD_RULES.some((rule) => !rule.test(password))) {
+        setError("Password does not meet all the requirements below.");
+        return;
+      }
+      if (password !== confirm) {
+        setError("Passwords do not match.");
+        return;
+      }
     }
 
     setBusy(true);
@@ -78,11 +97,31 @@ export default function Auth({ onLogin }) {
             <input
               type="password"
               autoComplete={isSignup ? "new-password" : "current-password"}
+              maxLength={isSignup ? PASSWORD_MAX_LENGTH : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="••••••••"
             />
+            {isSignup && (
+              <ul className="mt-2 space-y-1">
+                {PASSWORD_RULES.map((rule) => {
+                  const met = rule.test(password);
+                  return (
+                    <li
+                      key={rule.label}
+                      className={
+                        "flex items-start gap-1.5 text-xs " +
+                        (met ? "text-green-600" : "text-slate-500")
+                      }
+                    >
+                      <span aria-hidden="true">{met ? "✓" : "○"}</span>
+                      <span>{rule.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           {isSignup && (
