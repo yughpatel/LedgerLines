@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createTransaction, getCategories, updateTransaction } from "../api";
+import { createCategory, createTransaction, getCategories, updateTransaction } from "../api";
 
 // Mirrors the backend caps in app/schemas/transaction.py — backend stays authoritative,
 // these just save a round-trip and let the browser show the constraint in its picker.
@@ -9,6 +9,8 @@ const MIN_TRANSACTION_DATE_MS = Date.UTC(2020, 0, 1);
 // Backend allows a 1-minute skew tolerance on the future check; match it so we
 // don't reject a timestamp the server would have accepted.
 const FUTURE_SKEW_MS = 60 * 1000;
+// Mirrors CategoryCreateRequest in app/schemas/category.py
+const CATEGORY_NAME_MAX_LENGTH = 50;
 
 function toLocalInputValue(iso) {
   if (!iso) return "";
@@ -46,6 +48,11 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
   );
   // Captured once when the modal opens so the picker's ceiling doesn't drift mid-edit
   const [maxDateInput] = useState(() => defaultDateInput());
+  // Inline "add a category" flow, so users aren't stuck with the system defaults
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categorySaving, setCategorySaving] = useState(false);
+  const [categorySaveError, setCategorySaveError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,6 +82,37 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
       });
     return () => { cancelled = true; };
   }, [token]);
+
+  async function handleCreateCategory() {
+    const name = newCategoryName.trim();
+    if (!name) {
+      setCategorySaveError("Category name cannot be empty.");
+      return;
+    }
+
+    setCategorySaving(true);
+    setCategorySaveError("");
+    try {
+      const created = await createCategory(token, { name });
+      // Keep the same alphabetical order that GET /categories returns
+      setCategories((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setCategoryId(String(created.id));
+      setNewCategoryName("");
+      setCreatingCategory(false);
+    } catch (err) {
+      setCategorySaveError(err.message || "Failed to create category.");
+    } finally {
+      setCategorySaving(false);
+    }
+  }
+
+  function toggleCreatingCategory() {
+    setCreatingCategory((v) => !v);
+    setNewCategoryName("");
+    setCategorySaveError("");
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -192,26 +230,67 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              disabled={categoriesLoading || !!categoriesError}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">
-                {categoriesLoading
-                  ? "Loading categories…"
-                  : categories.length === 0
-                    ? "No categories available"
-                    : "Select a category"}
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">Category</label>
+              <button
+                type="button"
+                onClick={toggleCreatingCategory}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                {creatingCategory ? "Choose existing" : "+ New category"}
+              </button>
+            </div>
+
+            {creatingCategory ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  // Enter should add the category, not submit the whole transaction
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateCategory();
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Groceries"
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateCategory}
+                  disabled={categorySaving}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {categorySaving ? "Adding…" : "Add"}
+                </button>
+              </div>
+            ) : (
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                disabled={categoriesLoading || !!categoriesError}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">
+                  {categoriesLoading
+                    ? "Loading categories…"
+                    : categories.length === 0
+                      ? "No categories available"
+                      : "Select a category"}
                 </option>
-              ))}
-            </select>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {categorySaveError && (
+              <p className="mt-1 text-xs text-red-600">{categorySaveError}</p>
+            )}
             {categoriesError && (
               <p className="mt-1 text-xs text-red-600">{categoriesError}</p>
             )}

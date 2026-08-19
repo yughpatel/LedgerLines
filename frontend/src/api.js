@@ -131,6 +131,10 @@ export function getCategories(token) {
   return request("/categories", { token });
 }
 
+export function createCategory(token, data) {
+  return request("/categories", { method: "POST", token, body: data });
+}
+
 export function createTransaction(token, data) {
   return request("/transactions", { method: "POST", token, body: data });
 }
