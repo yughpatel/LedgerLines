@@ -86,12 +86,6 @@ export default function TransactionList({ token, onLogout }) {
     }
   }
 
-  const sorted = [...transactions].sort((a, b) => {
-    const ad = new Date(a.transaction_date).getTime() || 0;
-    const bd = new Date(b.transaction_date).getTime() || 0;
-    return bd - ad;
-  });
-
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200">
@@ -133,7 +127,7 @@ export default function TransactionList({ token, onLogout }) {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="p-10 text-center text-slate-500">Loading transactions…</div>
-          ) : sorted.length === 0 ? (
+          ) : transactions.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-slate-700 font-medium">No transactions yet</p>
               <p className="text-sm text-slate-500 mt-1">
@@ -155,7 +149,7 @@ export default function TransactionList({ token, onLogout }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {sorted.map((tx) => {
+                  {transactions.map((tx) => {
                     const isCredit = tx.type === "CREDIT";
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50">
