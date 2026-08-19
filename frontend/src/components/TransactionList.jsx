@@ -25,7 +25,7 @@ function formatAmount(amount) {
   });
 }
 
-export default function TransactionList({ token, onLogout }) {
+export default function TransactionList({ token, userEmail, onLogout }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,7 +92,9 @@ export default function TransactionList({ token, onLogout }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-800">LedgerLines</h1>
-            <p className="text-xs text-slate-500">Your personal ledger</p>
+            <p className="text-xs text-slate-500">
+              {userEmail || "Your personal ledger"}
+            </p>
           </div>
           <button
             type="button"

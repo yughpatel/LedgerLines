@@ -7,6 +7,7 @@ import "./App.css";
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("ll_token"));
   const [validating, setValidating] = useState(() => !!localStorage.getItem("ll_token"));
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     setOnAuthChange((newToken) => {
@@ -29,7 +30,8 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        await getMe(current);
+        const me = await getMe(current);
+        if (!cancelled) setUserEmail(me?.email || "");
       } catch {
         // Interceptor already cleared auth on refresh failure.
         // On any other error we defensively clear too so the user sees the login screen.
@@ -46,8 +48,14 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleLogin(newToken) {
+  async function handleLogin(newToken) {
     setToken(newToken);
+    try {
+      const me = await getMe(newToken);
+      setUserEmail(me?.email || "");
+    } catch {
+      // The header email is cosmetic — never block getting into the app over it
+    }
   }
 
   async function handleLogout() {
@@ -59,6 +67,7 @@ export default function App() {
     } finally {
       localStorage.removeItem("ll_token");
       setToken(null);
+      setUserEmail("");
     }
   }
 
@@ -72,5 +81,5 @@ export default function App() {
   if (!token) {
     return <Auth onLogin={handleLogin} />;
   }
-  return <TransactionList token={token} onLogout={handleLogout} />;
+  return <TransactionList token={token} userEmail={userEmail} onLogout={handleLogout} />;
 }
