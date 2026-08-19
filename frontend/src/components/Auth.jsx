@@ -3,6 +3,12 @@ import { login, signup } from "../api";
 
 // Mirrors UserCreate in app/schemas/user.py — signup only; login has no complexity
 // requirement, so applying these there would lock out existing accounts.
+// Browsers accept "a@b" for type="email", but the backend's EmailStr wants a
+// dotted domain — checking here turns a 422 round-trip into an instant message.
+function looksLikeEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 const PASSWORD_MAX_LENGTH = 20;
 const PASSWORD_RULES = [
   { label: "8 to 20 characters", test: (v) => v.length >= 8 && v.length <= PASSWORD_MAX_LENGTH },
@@ -35,6 +41,10 @@ export default function Auth({ onLogin }) {
 
     if (!email || !password) {
       setError("Email and password are required.");
+      return;
+    }
+    if (!looksLikeEmail(email)) {
+      setError("Enter a valid email address.");
       return;
     }
     if (isSignup) {
