@@ -33,6 +33,10 @@ def validate_transaction_date(value: datetime) -> datetime:
 class TransactionResponse(BaseModel):
     id: int
     user_id: int
+    # Per-user running number assigned by ROW_NUMBER() in app/services/transaction.py.
+    # Optional because the single-object routes (create/get/update) return the ORM row
+    # directly and have no window function to compute it; only the list endpoint sets it.
+    seq_number: Optional[int] = None
     type: TransactionType
     amount: Decimal
     # Nested Object: Returns full dictionary to frontend for UI rendering & data filtering

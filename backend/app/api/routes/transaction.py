@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.auth.security import get_current_user
 from app.models.user import User
 from app.services.category import validate_category
+from app.services.transaction import get_user_transactions
 import calendar
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -35,10 +36,7 @@ async def create_transaction(data: TransactionCreateRequest, session: Session=De
 @router.get("", status_code=status.HTTP_200_OK, response_model=list[TransactionResponse])
 async def list_transactions(session: Session = Depends(get_db),
                             current_user: User = Depends(get_current_user)):
-    transactions = session.query(Transaction).filter(
-        Transaction.user_id == current_user.id
-    ).order_by(Transaction.transaction_date.desc()).all()
-    return transactions
+    return get_user_transactions(current_user.id, session)
 
 @router.get("/summary", status_code=status.HTTP_200_OK, response_model=MonthlySummaryResponse)
 def get_monthly_summary(session: Session = Depends(get_db),

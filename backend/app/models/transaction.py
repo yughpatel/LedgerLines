@@ -1,10 +1,10 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app import Base
+from enum import Enum
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
-from sqlalchemy import Enum as SqlEnum, Numeric, ForeignKey, DateTime
-from enum import Enum
+from sqlalchemy import Enum as SqlEnum, Numeric, ForeignKey, DateTime, func  # Added func import
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app import Base
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -36,3 +36,9 @@ class Transaction(Base):
     category: Mapped["Category"] = relationship("Category", back_populates="transactions")
 
     description: Mapped[Optional[str]] = mapped_column(nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
