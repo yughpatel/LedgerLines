@@ -9,3 +9,4 @@ build/
 .idea/
 backend/flow_signup_endpoint.txt
 backend/flow_login_endpoint.txt
+/.claude
