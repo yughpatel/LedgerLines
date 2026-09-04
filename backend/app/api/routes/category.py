@@ -9,7 +9,9 @@ from app.models.user import User
 from app.schemas.category import CategoryResponse, CategoryCreateRequest
 from app.services.category import get_owned_category
 
-# Child rows still reference this: RESTRICT raises 23001, NO ACTION raises 23503
+# Version-dependent: PG18+ raises 23001 for RESTRICT specifically (see PG commit
+# "Fix error code for referential action RESTRICT", Dec 2024); PG16 and earlier
+# raise 23503 for both RESTRICT and NO ACTION. Both codes handled for portability.
 REFERENCED_BY_CHILD_ROW = frozenset({"23001", "23503"})
 
 router = APIRouter(prefix="/categories", tags=["category"])
