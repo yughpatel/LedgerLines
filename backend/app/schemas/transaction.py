@@ -21,8 +21,7 @@ def validate_transaction_date(value: datetime) -> datetime:
     if value < LOWEST_ALLOWED_TRANSACTION_DATE:
         raise ValueError("transaction_date cannot be earlier than 2020-01-01.")
 
-    # Reject future-dated transactions until recurring transactions ship;
-    # small tolerance for user-clock skew so a slightly-fast laptop doesn't 422 legitimate "now" entries
+    # No future dates until recurring transactions ship; 1 min of slack for clock skew
     now = datetime.now(timezone.utc)
     if value > now + timedelta(minutes=1):
         raise ValueError("transaction_date cannot be in the future; future-dated transactions are not allowed yet.")
@@ -33,9 +32,8 @@ def validate_transaction_date(value: datetime) -> datetime:
 class TransactionResponse(BaseModel):
     id: int
     user_id: int
-    # Per-user running number assigned by ROW_NUMBER() in app/services/transaction.py.
-    # Optional because the single-object routes (create/get/update) return the ORM row
-    # directly and have no window function to compute it; only the list endpoint sets it.
+    # Per-user running number from ROW_NUMBER() in services/transaction.py.
+    # Optional because only the list route computes it; create/get/update return None.
     seq_number: Optional[int] = None
     type: TransactionType
     amount: Decimal

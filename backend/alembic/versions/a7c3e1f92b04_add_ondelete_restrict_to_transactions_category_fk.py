@@ -21,8 +21,7 @@ CONSTRAINT_NAME = 'fk_transactions_category_id'
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Postgres has no ALTER CONSTRAINT for changing referential actions, so the
-    # constraint is dropped and recreated under the same name with RESTRICT.
+    # Postgres can't ALTER a referential action, so drop and recreate under the same name
     op.drop_constraint(CONSTRAINT_NAME, 'transactions', type_='foreignkey')
     op.create_foreign_key(
         CONSTRAINT_NAME,

@@ -31,8 +31,7 @@ class Transaction(Base):
     type: Mapped[TransactionType] = mapped_column(SqlEnum(TransactionType))
     amount: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2))
 
-    # RESTRICT: a category that still has transactions cannot be deleted. The endpoint
-    # turns the resulting IntegrityError into a 409 rather than orphaning history.
+    # RESTRICT: a category with transactions can't be deleted (endpoint returns 409)
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False
     )

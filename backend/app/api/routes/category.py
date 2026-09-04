@@ -9,9 +9,7 @@ from app.models.user import User
 from app.schemas.category import CategoryResponse, CategoryCreateRequest
 from app.services.category import get_owned_category
 
-# Postgres SQLSTATEs meaning "a child row still references this". Which one you get
-# depends on how the FK is declared: RESTRICT raises 23001, a plain NO ACTION FK raises
-# 23503. Both are accepted so the handler survives the constraint being redeclared.
+# Child rows still reference this: RESTRICT raises 23001, NO ACTION raises 23503
 REFERENCED_BY_CHILD_ROW = frozenset({"23001", "23503"})
 
 router = APIRouter(prefix="/categories", tags=["category"])
@@ -72,11 +70,10 @@ async def delete_category(id: int,
                           session: Session = Depends(get_db),
                           current_user: User = Depends(get_current_user)):
     """
-    Delete one of the user's own categories.
+    Delete one of the user's own categories. 409 if transactions still reference it.
 
-    Rejects with 409 if any transaction still references it. The check is the DB's
-    RESTRICT rather than a pre-count, so a transaction created between the check and
-    the delete can't slip through the gap.
+    Relies on the DB's RESTRICT rather than a pre-count, so nothing can slip in
+    between checking and deleting.
     """
     category = get_owned_category(id, current_user.id, session)
 
@@ -84,11 +81,9 @@ async def delete_category(id: int,
     try:
         session.commit()
     except IntegrityError as err:
-        # A failed flush leaves the session aborted — every later statement errors
-        # until it is rolled back, including anything a later dependency runs.
+        # A failed flush aborts the session; everything after it errors until rollback
         session.rollback()
-        # Only a child-row reference means "still in use". Anything else is a genuine
-        # fault and must surface as a 500 instead of a misleading "in use" message.
+        # Anything else is a real fault — 500 rather than mislabel it as "in use"
         if getattr(err.orig, "pgcode", None) not in REFERENCED_BY_CHILD_ROW:
             raise
         raise HTTPException(

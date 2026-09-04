@@ -20,10 +20,8 @@ class Category(Base):
 
     # Bidirectional relationships
     user: Mapped[Optional["User"]] = relationship("User", back_populates="categories")
-    # passive_deletes="all" stops the ORM from loading these rows and nulling their
-    # category_id when a Category is deleted. Without it the children are detached
-    # before the DELETE reaches Postgres, so the FK's RESTRICT never fires and the
-    # delete succeeds — the constraint would be dead weight.
+    # passive_deletes="all" stops the ORM nulling category_id on delete — without it
+    # the rows are detached before the FK's RESTRICT can fire
     transactions: Mapped[List["Transaction"]] = relationship(
         "Transaction", back_populates="category", passive_deletes="all"
     )

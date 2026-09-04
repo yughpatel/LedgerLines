@@ -7,15 +7,10 @@ from app.schemas.transaction import TransactionResponse
 
 def get_user_transactions(current_user_id: int, session: Session) -> list[TransactionResponse]:
     """
-    Return the current user's transactions, each tagged with a per-user sequence number.
+    Return the user's transactions, each tagged with a per-user sequence number.
 
-    seq_number comes from ROW_NUMBER() partitioned by user_id, so it restarts at 1 for
-    every user and is never affected by another user's rows. It is ordered by created_at
-    with id as the tiebreaker, so two rows inserted in the same tick still get a stable,
-    deterministic order.
-
-    The rows themselves are returned newest transaction_date first, matching how the
-    list is displayed.
+    seq_number is ROW_NUMBER() partitioned by user_id, so it restarts at 1 per user.
+    Ordered by created_at with id as tiebreaker; rows come back newest-date first.
     """
     stmt = (
         select(
@@ -33,9 +28,8 @@ def get_user_transactions(current_user_id: int, session: Session) -> list[Transa
 
     transactions = []
     for transaction, seq_number in session.execute(stmt):
-        # from_attributes reads the mapped columns straight off the ORM object; seq_number
-        # isn't one of them, so it lands as None here and is filled in by the copy below.
-        # Copying rather than assigning onto the ORM object keeps the entity unmutated.
+        # seq_number isn't a mapped column so it validates as None; copying fills it in
+        # without mutating the ORM object
         response = TransactionResponse.model_validate(transaction)
         transactions.append(response.model_copy(update={"seq_number": seq_number}))
 
