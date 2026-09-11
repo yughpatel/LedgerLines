@@ -5,6 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api.routes.auth import router as auth_router
 from app.api.routes.transaction import router as transaction_router
 from app.api.routes.category import router as category_router
+from app.api.routes.analytics import router as analytics_router
 from app.core.limiter import limiter
 app = FastAPI(title="LedgerLines", version="0.1.0")
 # Attach the limiter to the application state
@@ -26,6 +27,8 @@ app.include_router(auth_router)
 app.include_router(transaction_router)
 # Include all category routes
 app.include_router(category_router)
+# Include all analytics routes
+app.include_router(analytics_router)
 @app.get("/")
 async def root():
     return {"message": "LedgerLines API is running"}
