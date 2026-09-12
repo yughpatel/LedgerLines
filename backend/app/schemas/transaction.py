@@ -5,10 +5,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.transaction import TransactionType
 from app.schemas.category import CategoryResponse
 
-# Product doesn't support backfilling history earlier than this
+# Product doesn't support backfilling history earlier than 01/01/2020
 LOWEST_ALLOWED_TRANSACTION_DATE = datetime(2020, 1, 1, tzinfo=timezone.utc)
 
-# Product cap — no single transaction can exceed ₹5,00,000
+# Transaction Amount cap — no single transaction can exceed ₹5,00,000
 MAX_TRANSACTION_AMOUNT = Decimal("500000")
 
 
@@ -17,7 +17,7 @@ def validate_transaction_date(value: datetime) -> datetime:
     if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
         raise ValueError("transaction_date must include a timezone offset (e.g. 'Z' or '+05:30').")
 
-    # Reject anything before 2020 — product doesn't support backfilling that far
+    # Reject anything before 2026, product doesn't support backfilling that far
     if value < LOWEST_ALLOWED_TRANSACTION_DATE:
         raise ValueError("transaction_date cannot be earlier than 2020-01-01.")
 

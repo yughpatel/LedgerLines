@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
-
 class CategoryResponse(BaseModel):
     id: int
     name: str
