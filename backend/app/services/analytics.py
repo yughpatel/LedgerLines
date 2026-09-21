@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from sqlalchemy import Row, func, select
+from sqlalchemy import Row, func, select, desc
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
@@ -32,6 +32,6 @@ def get_spending_by_category(
         # Postgres requires every non-aggregated column in the SELECT to appear here.
         # Grouping by id alone would make Category.name illegal to select.
         .group_by(Category.id, Category.name)
-        .order_by(func.sum(Transaction.amount).desc())
+        .order_by(desc("total"))
     )
     return session.execute(stmt).all()
