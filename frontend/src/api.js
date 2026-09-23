@@ -127,6 +127,10 @@ export function getSummary(token) {
   return request("/transactions/summary", { token });
 }
 
+export function getSpendingByCategory(token) {
+  return request("/analytics/spending-by-category", { token });
+}
+
 export function getCategories(token) {
   return request("/categories", { token });
 }

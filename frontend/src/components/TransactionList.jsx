@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { deleteTransaction, getTransactions } from "../api";
 import MonthlySummary from "./MonthlySummary";
+import SpendingByCategory from "./SpendingByCategory";
 import TransactionForm from "./TransactionForm";
 
 function formatDate(iso) {
@@ -108,6 +109,7 @@ export default function TransactionList({ token, userEmail, onLogout }) {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <MonthlySummary token={token} refreshKey={summaryVersion} />
+        <SpendingByCategory token={token} refreshKey={summaryVersion} />
 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-800">Transactions</h2>
