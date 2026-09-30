@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.auth.security import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.analytics import CategorySpendingResponse
-from app.services.analytics import get_spending_by_category
+from app.schemas.analytics import CategoryIncomeResponse, CategorySpendingResponse
+from app.services.analytics import get_income_by_category, get_spending_by_category
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -26,6 +26,30 @@ async def list_spending_by_category(
     rows = get_spending_by_category(current_user.id, session)
     return [
         CategorySpendingResponse(
+            category_id=row.category_id,
+            category_name=row.category_name,
+            total=row.total,
+        )
+        for row in rows
+    ]
+
+
+@router.get(
+    "/income-by-category",
+    status_code=status.HTTP_200_OK,
+    response_model=list[CategoryIncomeResponse],
+)
+async def list_income_by_category(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Per-category CREDIT totals for the signed-in user, all-time, biggest first.
+    Categories with no CREDIT rows are omitted.
+    """
+    rows = get_income_by_category(current_user.id, session)
+    return [
+        CategoryIncomeResponse(
             category_id=row.category_id,
             category_name=row.category_name,
             total=row.total,

@@ -35,3 +35,30 @@ def get_spending_by_category(
         .order_by(desc("total"))
     )
     return session.execute(stmt).all()
+
+
+def get_income_by_category(
+    current_user_id: int,
+    session: Session,
+) -> Sequence[Row]:
+    """
+    Per-category CREDIT totals for the given user, biggest first.
+
+    Mirror of get_spending_by_category with the type flipped — same inner join,
+    so categories with no CREDIT rows are omitted.
+    """
+    stmt = (
+        select(
+            Category.id.label("category_id"),
+            Category.name.label("category_name"),
+            func.sum(Transaction.amount).label("total"),
+        )
+        .join(Category, Category.id == Transaction.category_id)
+        .where(
+            Transaction.user_id == current_user_id,
+            Transaction.type == TransactionType.CREDIT,
+        )
+        .group_by(Category.id, Category.name)
+        .order_by(desc("total"))
+    )
+    return session.execute(stmt).all()

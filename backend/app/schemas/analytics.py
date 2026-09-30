@@ -6,3 +6,9 @@ class CategorySpendingResponse(BaseModel):
     category_id: int
     category_name: str
     total: Decimal
+
+
+class CategoryIncomeResponse(BaseModel):
+    category_id: int
+    category_name: str
+    total: Decimal
