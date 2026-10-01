@@ -18,8 +18,8 @@ router = APIRouter(prefix="/categories", tags=["category"])
 
 
 @router.get("", status_code=200, response_model=list[CategoryResponse])
-async def list_categories(session: Session = Depends(get_db),
-                          current_user: User = Depends(get_current_user)):
+def list_categories(session: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
     """
     Returns an alphabetical list of system defaults and user-specific custom categories.
     """
@@ -34,9 +34,9 @@ async def list_categories(session: Session = Depends(get_db),
 
 
 @router.post("", status_code=201, response_model=CategoryResponse)
-async def create_category(data: CategoryCreateRequest,
-                          session: Session = Depends(get_db),
-                          current_user: User = Depends(get_current_user)):
+def create_category(data: CategoryCreateRequest,
+                    session: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
     """
     Creates a new custom category for the authenticated user.
     Rejects duplicates (case-insensitive) against both custom and system default categories.
@@ -68,9 +68,9 @@ async def create_category(data: CategoryCreateRequest,
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(id: int,
-                          session: Session = Depends(get_db),
-                          current_user: User = Depends(get_current_user)):
+def delete_category(id: int,
+                    session: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
     """
     Delete one of the user's own categories. 409 if transactions still reference it.
 

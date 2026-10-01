@@ -15,8 +15,8 @@ from sqlalchemy import func, select, case
 router = APIRouter(prefix="/transactions", tags=["transaction"])
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=TransactionResponse)
-async def create_transaction(data: TransactionCreateRequest, session: Session=Depends(get_db),
-                             current_user: User=Depends(get_current_user)):
+def create_transaction(data: TransactionCreateRequest, session: Session=Depends(get_db),
+                       current_user: User=Depends(get_current_user)):
     validate_category(data.category_id, current_user.id, session)
 
     new_transaction = Transaction(
@@ -34,8 +34,8 @@ async def create_transaction(data: TransactionCreateRequest, session: Session=De
     return new_transaction
 
 @router.get("", status_code=status.HTTP_200_OK, response_model=list[TransactionResponse])
-async def list_transactions(session: Session = Depends(get_db),
-                            current_user: User = Depends(get_current_user)):
+def list_transactions(session: Session = Depends(get_db),
+                      current_user: User = Depends(get_current_user)):
     return get_user_transactions(current_user.id, session)
 
 @router.get("/summary", status_code=status.HTTP_200_OK, response_model=MonthlySummaryResponse)
@@ -81,8 +81,8 @@ def get_monthly_summary(session: Session = Depends(get_db),
     }
 
 @router.get("/{id}", status_code=status.HTTP_200_OK, response_model=TransactionResponse)
-async def get_transaction(id: int, session: Session=Depends(get_db),
-                          current_user: User = Depends(get_current_user)):
+def get_transaction(id: int, session: Session=Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(
         Transaction.id == id,
         Transaction.user_id == current_user.id
@@ -93,8 +93,8 @@ async def get_transaction(id: int, session: Session=Depends(get_db),
     return transaction
 
 @router.put("/{id}", status_code=status.HTTP_200_OK, response_model=TransactionResponse)
-async def update_transaction(id: int, data: TransactionUpdate, session: Session=Depends(get_db),
-                             current_user: User = Depends(get_current_user)):
+def update_transaction(id: int, data: TransactionUpdate, session: Session=Depends(get_db),
+                       current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(
         Transaction.id == id,
         Transaction.user_id == current_user.id
@@ -121,8 +121,8 @@ async def update_transaction(id: int, data: TransactionUpdate, session: Session=
     return transaction
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_transaction(id: int, session: Session = Depends(get_db),
-                             current_user: User = Depends(get_current_user)):
+def delete_transaction(id: int, session: Session = Depends(get_db),
+                       current_user: User = Depends(get_current_user)):
     transaction = session.query(Transaction).filter(
         Transaction.id == id,
         Transaction.user_id == current_user.id

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
     status_code=status.HTTP_200_OK,
     response_model=list[CategorySpendingResponse],
 )
-async def list_spending_by_category(
+def list_spending_by_category(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -39,7 +39,7 @@ async def list_spending_by_category(
     status_code=status.HTTP_200_OK,
     response_model=list[CategoryIncomeResponse],
 )
-async def list_income_by_category(
+def list_income_by_category(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

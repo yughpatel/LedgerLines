@@ -19,7 +19,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("2/minute")  # Target limit for registration
-async def create_user(request: Request, user: UserCreate, db: Session = Depends(get_db)):
+def create_user(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -49,7 +49,7 @@ async def create_user(request: Request, user: UserCreate, db: Session = Depends(
 
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
 @limiter.limit("5/minute")
-async def login_user(request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)):
+def login_user(request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)):
     # Check if user exists and password is correct
     existing_user = db.query(User).filter(User.email == user.email).first()
     if not existing_user or not verify_password(user.password, existing_user.hashed_password):
@@ -83,7 +83,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
-async def refresh_token_route(
+def refresh_token_route(
         db: Session = Depends(get_db),
         refresh_token: str | None = Cookie(default=None)
 ):
@@ -104,7 +104,7 @@ async def refresh_token_route(
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout_user(
+def logout_user(
         response: Response,
         db: Session = Depends(get_db),
         refresh_token: str | None = Cookie(default=None)
