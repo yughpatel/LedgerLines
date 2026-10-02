@@ -32,7 +32,8 @@ def get_spending_by_category(
         # Postgres requires every non-aggregated column in the SELECT to appear here.
         # Grouping by id alone would make Category.name illegal to select.
         .group_by(Category.id, Category.name)
-        .order_by(desc("total"))
+        # Tie-breakers keep equal totals in a stable order so the chart doesn't reshuffle
+        .order_by(desc("total"), Category.name, Category.id)
     )
     return session.execute(stmt).all()
 
@@ -59,6 +60,6 @@ def get_income_by_category(
             Transaction.type == TransactionType.CREDIT,
         )
         .group_by(Category.id, Category.name)
-        .order_by(desc("total"))
+        .order_by(desc("total"), Category.name, Category.id)
     )
     return session.execute(stmt).all()
