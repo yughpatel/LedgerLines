@@ -1,5 +1,5 @@
 from decimal import Decimal
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class CategorySpendingResponse(BaseModel):

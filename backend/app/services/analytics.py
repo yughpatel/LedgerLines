@@ -24,6 +24,7 @@ def get_spending_by_category(
             Category.name.label("category_name"),
             func.sum(Transaction.amount).label("total"),
         )
+        .select_from(Transaction)
         .join(Category, Category.id == Transaction.category_id)
         .where(
             Transaction.user_id == current_user_id,
@@ -54,6 +55,7 @@ def get_income_by_category(
             Category.name.label("category_name"),
             func.sum(Transaction.amount).label("total"),
         )
+        .select_from(Transaction)
         .join(Category, Category.id == Transaction.category_id)
         .where(
             Transaction.user_id == current_user_id,
