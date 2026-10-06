@@ -38,7 +38,7 @@ def get_owned_category(
     """
     Return a category the user personally owns, or raise 404.
 
-    Stricter than validate_category, which also allows system defaults — those are
+    Stricter than validate_category, which also allows system defaults - those are
     shared, so no one user may delete them.
     """
     category = session.query(Category).filter(

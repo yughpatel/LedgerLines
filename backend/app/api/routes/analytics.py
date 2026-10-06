@@ -20,8 +20,8 @@ def list_spending_by_category(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Per-category DEBIT totals for the signed-in user, all-time, biggest first.
-    Categories with no DEBIT rows are omitted.
+    Per-category spending (DEBIT minus REFUND) for the signed-in user, all-time, biggest first.
+    Categories with no spending left after refunds are omitted.
     """
     rows = get_spending_by_category(current_user.id, session)
     return [

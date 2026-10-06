@@ -13,10 +13,8 @@ if TYPE_CHECKING:
 class TransactionType(str, Enum):
     CREDIT = "CREDIT"
     DEBIT = "DEBIT"
-
-# ==============================================================================
-# Database Model
-# ==============================================================================
+    # Money back on a purchase: reduces spending, but isn't counted as income
+    REFUND = "REFUND"
 
 class Transaction(Base):
     __tablename__ = 'transactions'

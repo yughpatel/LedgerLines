@@ -57,9 +57,15 @@ def get_monthly_summary(session: Session = Depends(get_db),
             ),
             0
         ).label("total_earned"),
+        # Refunds are subtracted here rather than added to total_earned; this can go
+        # negative when a refund lands in a later month than the purchase, and that's correct
         func.coalesce(
             func.sum(
-                case((Transaction.type == TransactionType.DEBIT, Transaction.amount), else_=0)
+                case(
+                    (Transaction.type == TransactionType.DEBIT, Transaction.amount),
+                    (Transaction.type == TransactionType.REFUND, -Transaction.amount),
+                    else_=0
+                )
             ),
             0
         ).label("total_spent")
