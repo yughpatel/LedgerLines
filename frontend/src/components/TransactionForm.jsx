@@ -212,6 +212,7 @@ export default function TransactionForm({ token, transaction, onClose, onSaved }
               >
                 <option value="CREDIT">CREDIT</option>
                 <option value="DEBIT">DEBIT</option>
+                <option value="REFUND">REFUND</option>
               </select>
             </div>
             <div>

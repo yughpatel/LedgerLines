@@ -17,6 +17,14 @@ function formatDate(iso) {
   });
 }
 
+// One entry per type, so a new type shows up as missing here instead of
+// silently falling into the debit styling
+const TYPE_STYLES = {
+  CREDIT: { badge: "bg-green-100 text-green-700", amount: "text-green-600", sign: "+" },
+  DEBIT: { badge: "bg-red-100 text-red-700", amount: "text-red-600", sign: "−" },
+  REFUND: { badge: "bg-amber-100 text-amber-700", amount: "text-amber-600", sign: "+" },
+};
+
 function formatAmount(amount) {
   const n = Number(amount);
   if (Number.isNaN(n)) return String(amount);
@@ -154,7 +162,7 @@ export default function TransactionList({ token, userEmail, onLogout }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {transactions.map((tx) => {
-                    const isCredit = tx.type === "CREDIT";
+                    const typeStyle = TYPE_STYLES[tx.type];
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 text-slate-500">#{tx.id}</td>
@@ -166,9 +174,7 @@ export default function TransactionList({ token, userEmail, onLogout }) {
                           <span
                             className={
                               "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
-                              (isCredit
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700")
+                              typeStyle.badge
                             }
                           >
                             {tx.type}
@@ -177,10 +183,10 @@ export default function TransactionList({ token, userEmail, onLogout }) {
                         <td
                           className={
                             "px-4 py-3 text-right font-medium tabular-nums " +
-                            (isCredit ? "text-green-600" : "text-red-600")
+                            typeStyle.amount
                           }
                         >
-                          {isCredit ? "+" : "−"}
+                          {typeStyle.sign}
                           {formatAmount(tx.amount)}
                         </td>
                         <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
