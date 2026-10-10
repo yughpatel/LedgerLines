@@ -1,8 +1,8 @@
 # LedgerLines
 
-A personal finance tracker built to be actually used, not just a learning project. Track income and expenses, see monthly summaries, and (coming soon) split shared costs with friends and visualize spending by category.
+A personal finance tracker. Log income, expenses and refunds, see a monthly summary, and see where your money goes by category.
 
-Built as a full-stack learning project with a focus on backend engineering, security, and production-readiness — not just "make it work."
+Built as a full-stack project with a focus on backend engineering, security and production readiness.
 
 ---
 
@@ -19,10 +19,11 @@ Built as a full-stack learning project with a focus on backend engineering, secu
 - [Running the App](#running-the-app)
 - [API Overview](#api-overview)
 - [Authentication](#authentication)
+- [Security Decisions](#security-decisions)
 - [Data Models](#data-models)
 - [Development Workflow](#development-workflow)
 - [Testing](#testing)
-- [Deployment (Planned)](#deployment-planned)
+- [Deployment](#deployment)
 - [Roadmap](#roadmap)
 - [Known Limitations](#known-limitations)
 - [License](#license)
@@ -31,39 +32,35 @@ Built as a full-stack learning project with a focus on backend engineering, secu
 
 ## Overview
 
-LedgerLines is a personal finance tracker where a user can:
-- Sign up and log in securely (JWT-based auth)
-- Log transactions (income or expenses) with custom categories
-- View a monthly summary of what they earned, spent, and their net balance
-- (Planned) See spending broken down visually by category
-- (Planned) Split shared expenses with friends and track who owes whom
+LedgerLines lets a user:
+- Sign up and log in (JWT access token plus a refresh token in an httpOnly cookie)
+- Record transactions as `CREDIT` (income), `DEBIT` (spending) or `REFUND` (money back on a purchase)
+- Use built-in categories or create their own
+- See this month's total earned, total spent and net
+- See all-time spending by category as a bar chart
 
-The backend is written in **FastAPI** with **PostgreSQL**, and the frontend is a **React + Tailwind** app. This is a solo project by a first-year B.Tech CSE student, built with a career focus on backend development and cybersecurity — so security and correctness are treated as first-class concerns, not afterthoughts.
+The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwind**, built with Vite. It is a solo project by a first-year B.Tech CSE student focused on backend development and cybersecurity.
 
 ---
 
 ## Features
 
-### ✅ Current
+### Current
 
-- **Auth:** Signup and login with JWT-based authentication (`python-jose` + `passlib` for password hashing)
-- **Transaction CRUD:** Create, read, update, and delete transactions
-  - Each transaction has an amount, type (`CREDIT`/`DEBIT`), category, description, and date
-  - Amounts stored as `Decimal` (never `float`) for monetary precision
-- **Ownership checks:** Users can only access and modify their own transactions
-- **Categories:** Built-in default categories (e.g., Food, Rent, Salary, Travel, Utilities) plus user-defined custom categories
-- **Monthly Summary:** `GET /transactions/summary` returns total earned, total spent, and net for the current calendar month, computed with a single SQL query using conditional `SUM()`
-- **Partial updates:** Editing a transaction only updates the fields that were actually changed (`model_dump(exclude_unset=True)`)
-- **Frontend:** React app with login/signup, transaction list, transaction form, and delete confirmation — fully wired to the live backend
-- **Auto-refreshing summary:** The monthly summary card updates immediately after any create/edit/delete, without a page reload
+- **Auth:** signup, login, `/auth/me`, silent refresh, and logout that revokes the refresh token
+- **Rate limiting:** signup 2/minute, login 5/minute per IP (slowapi)
+- **Transactions:** create, list, get, partial update, delete
+  - Amounts stored as `Numeric(10, 2)`, never `float`
+  - Each listed transaction gets a per-user sequence number (`seq_number`, from `ROW_NUMBER()`)
+- **Categories:** system defaults (Food, Rent, Travel, Utilities, Other) plus custom categories, unique per user ignoring case. Custom categories can be deleted if no transaction uses them.
+- **Monthly summary:** total earned, total spent and net for the current calendar month (UTC month boundaries), in one SQL query
+- **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties
+- **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
+- **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards and a spending-by-category chart. The summary and chart refresh after every create, edit or delete.
 
-### 🔜 Planned
+### Planned
 
-- **Category breakdown + graphs:** `GET /transactions/summary/by-category` endpoint, with pie and bar charts (Recharts) showing spending distribution by category
-- **Expense splitting (Splitwise-style):** Log a shared expense, split it among friends (registered or not), track who owes whom, and settle up — including partial payments and auto-calculated net balances
-- **Security hardening:** JWT refresh tokens (short-lived access tokens + long-lived refresh tokens), rate limiting on auth and API endpoints, a full input-validation audit, and reversible Alembic migrations
-- **Production deployment:** Backend on Render, database on Supabase, frontend on Vercel, with proper secrets management, error monitoring, and load testing
-- **AI spending insights (stretch goal):** Trend detection, anomaly alerts, and spending predictions — deferred until the core product is solid
+See [ROADMAP.md](ROADMAP.md). Next up: an income chart, trend over time, date filters and a pytest suite (Phase 1), then deployment (Phase 2).
 
 ---
 
@@ -74,19 +71,20 @@ The backend is written in **FastAPI** with **PostgreSQL**, and the frontend is a
 |---|---|
 | Framework | FastAPI |
 | Database | PostgreSQL |
-| ORM | SQLAlchemy v2 |
-| Validation | Pydantic v2 |
-| Auth | JWT (`python-jose`), password hashing (`passlib[bcrypt]`, pinned to `bcrypt==4.0.1`) |
+| ORM | SQLAlchemy 2.0 |
+| Validation | Pydantic v2, pydantic-settings |
+| Auth | JWT (`python-jose`), password and refresh token hashing (`passlib` with `bcrypt==4.0.1`) |
+| Rate limiting | slowapi (in-memory) |
 | Migrations | Alembic |
 | Server | Uvicorn |
 
 ### Frontend
 | Component | Choice |
 |---|---|
-| Framework | React |
-| Styling | Tailwind CSS |
+| Framework | React 19 |
+| Styling | Tailwind CSS 4 |
 | Charts | Recharts |
-| Build tool | Vite |
+| Build tool | Vite 8 |
 
 ### Planned Hosting
 | Layer | Provider |
@@ -104,47 +102,40 @@ The backend is written in **FastAPI** with **PostgreSQL**, and the frontend is a
 LedgerLines/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                    # FastAPI app entrypoint, CORS config
-│   │   ├── api/
-│   │   │   └── routes/
-│   │   │       ├── auth.py            # Signup/login endpoints
-│   │   │       ├── transaction.py     # Transaction CRUD + summary endpoints
-│   │   │       └── category.py        # Category endpoints
-│   │   ├── auth/
-│   │   │   └── security.py            # Password hashing, JWT creation/validation
+│   │   ├── main.py                  # App entrypoint, CORS, limiter, routers
+│   │   ├── api/routes/
+│   │   │   ├── auth.py              # signup, login, me, refresh, logout
+│   │   │   ├── transaction.py       # Transaction CRUD + monthly summary
+│   │   │   ├── category.py          # List, create, delete categories
+│   │   │   └── analytics.py         # Spending and income by category
+│   │   ├── auth/security.py         # Password hashing, JWTs, current user, refresh token checks
 │   │   ├── core/
-│   │   │   └── config.py              # App settings, env var loading
-│   │   ├── db/
-│   │   │   └── session.py             # DB engine/session setup
-│   │   ├── models/
-│   │   │   ├── user.py                # User model
-│   │   │   ├── transaction.py         # Transaction model
-│   │   │   └── category.py            # Category model
-│   │   └── schemas/
-│   │       ├── user.py                # Pydantic schemas for User/auth
-│   │       └── transaction.py         # Pydantic schemas for Transaction
-│   ├── alembic/                       # Migration environment
-│   │   └── versions/                  # Individual migration files
-│   ├── requirements.txt
+│   │   │   ├── config.py            # Settings from env / .env
+│   │   │   └── limiter.py           # Shared slowapi Limiter
+│   │   ├── db/session.py            # Engine, session, get_db
+│   │   ├── models/                  # user, transaction, category, refresh_token
+│   │   ├── schemas/                 # user, transaction, category, analytics
+│   │   └── services/
+│   │       ├── analytics.py         # Category aggregation queries
+│   │       ├── category.py          # Category access checks
+│   │       └── transaction.py       # Transaction list with seq_number
+│   ├── alembic/versions/            # Migrations
 │   ├── alembic.ini
-│   └── venv/                          # Local virtual environment (not committed)
+│   ├── requirements.txt
+│   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── assets/                    # Static assets (images, icons)
-│   │   ├── components/
-│   │   │   ├── Auth.jsx
-│   │   │   ├── TransactionList.jsx
-│   │   │   ├── TransactionForm.jsx
-│   │   │   └── MonthlySummary.jsx
-│   │   ├── api.js                     # API client, request helpers
+│   │   ├── api.js                   # API client, 401 refresh interceptor
 │   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── main.jsx
-│   │   └── index.css
+│   │   └── components/
+│   │       ├── Auth.jsx
+│   │       ├── TransactionList.jsx
+│   │       ├── TransactionForm.jsx
+│   │       ├── MonthlySummary.jsx
+│   │       └── SpendingByCategory.jsx
 │   ├── package.json
 │   └── vite.config.js
-├── docs/                              # (planned) architecture notes, test reports
-├── .gitignore
+├── ROADMAP.md
 └── README.md
 ```
 
@@ -152,35 +143,36 @@ LedgerLines/
 
 ## Prerequisites
 
-- **Python** 3.11+
-- **Node.js** 18+ and npm
-- **PostgreSQL** 15+ (developed/tested against PostgreSQL 18)
+- **Python:** developed on 3.14. Older versions are untested.
+- **Node.js:** `^20.19.0` or `>=22.12.0` (required by Vite 8)
+- **PostgreSQL:** 15 or newer (the category index uses `NULLS NOT DISTINCT`). Developed against PostgreSQL 18.
 - **Git**
-- Windows 11 + PowerShell (this project is developed without WSL; all commands below are PowerShell-native)
+- Windows 11 + PowerShell. All commands below are PowerShell.
 
 ---
 
 ## Local Setup
 
-### 1. Clone the repository
+### 1. Clone
 
 ```powershell
 git clone https://github.com/yughpatel/LedgerLines.git
 cd LedgerLines
 ```
 
-### 2. Backend setup
+### 2. Backend
 
 ```powershell
 cd backend
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+pip install email-validator==2.3.0
 ```
 
-> Make sure your IDE's Python interpreter points to `backend\venv\Scripts\python.exe` (this project uses PyCharm).
+`email-validator` is needed by the auth schemas (`EmailStr`) but is not in `requirements.txt` yet, so it is installed separately.
 
-### 3. Frontend setup
+### 3. Frontend
 
 ```powershell
 cd ..\frontend
@@ -191,27 +183,30 @@ npm install
 
 ## Environment Variables
 
-Create a `.env` file inside `backend/` (this file is git-ignored and should never be committed):
+Copy the example and fill in real values. `backend/.env` is git-ignored.
 
-```env
-DATABASE_URL=postgresql://<username>:<password>@localhost:5432/ledgerlines
-JWT_SECRET_KEY=<your-secret-key>
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+```powershell
+cd backend
+Copy-Item .env.example .env
 ```
 
-- `DATABASE_URL` — connection string for your local PostgreSQL instance
-- `JWT_SECRET_KEY` — used to sign JWTs; generate a long random string, never reuse across environments
-- `JWT_ALGORITHM` — signing algorithm (HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES` — how long an access token stays valid before refresh tokens are implemented
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SECRET_KEY` | Signs access tokens |
+| `ALGORITHM` | JWT algorithm, e.g. `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
+| `REFRESH_TOKEN_SECRET_KEY` | Signs refresh tokens (separate from `SECRET_KEY`) |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime |
+| `ENVIRONMENT` | Optional, defaults to `development`. `production` makes the refresh cookie `Secure`. |
+
+Names are not case sensitive (pydantic-settings default).
 
 ---
 
 ## Database
 
 ### Create the local database
-
-Using `psql` or pgAdmin 4:
 
 ```powershell
 psql -U postgres
@@ -223,20 +218,20 @@ CREATE DATABASE ledgerlines;
 
 ```powershell
 cd backend
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 alembic upgrade head
 ```
 
-This applies all schema migrations (users, transactions, categories, etc.) to your local database.
+Alembic reads `DATABASE_URL` from settings, not from `alembic.ini`.
 
-### Creating a new migration (when models change)
+### New migration
 
 ```powershell
 alembic revision --autogenerate -m "describe the change"
 alembic upgrade head
 ```
 
-Always review autogenerated migrations before applying — Alembic doesn't catch everything (e.g., renamed columns may show up as drop + add).
+Review autogenerated migrations before applying. Things autogenerate misses here include enum values and data backfills.
 
 ---
 
@@ -246,152 +241,173 @@ Always review autogenerated migrations before applying — Alembic doesn't catch
 
 ```powershell
 cd backend
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 uvicorn app.main:app --reload
 ```
 
-- API runs at `http://localhost:8000`
-- Interactive API docs (Swagger UI): `http://localhost:8000/docs`
-- Alternative docs (ReDoc): `http://localhost:8000/redoc`
+- API: `http://localhost:8000`
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
 ### Frontend
 
-In a separate terminal:
+In a second terminal:
 
 ```powershell
 cd frontend
 npm run dev
 ```
 
-- App runs at `http://localhost:3000`
-
-Both servers need to be running simultaneously for the app to work end-to-end.
+- App: `http://localhost:3000` (fixed port; the backend CORS config only allows this origin)
 
 ---
 
 ## API Overview
 
-All endpoints (except signup/login) require a valid JWT in the `Authorization: Bearer <token>` header.
+Protected endpoints need `Authorization: Bearer <access token>`. Full schemas are in `/docs`.
 
 ### Auth
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/auth/signup` | Create a new user account (201 on success) |
-| POST | `/auth/login` | Log in, returns a JWT access token (200 on success) |
+| POST | `/auth/signup` | Create an account (201). 409 if the email exists. Limit 2/minute. |
+| POST | `/auth/login` | Returns an access token and sets the `refresh_token` cookie. Limit 5/minute. |
+| GET | `/auth/me` | Current user (`id`, `email`) |
+| POST | `/auth/refresh` | Uses the refresh cookie, returns a new access token |
+| POST | `/auth/logout` | Revokes the refresh token and clears the cookie |
 
 ### Transactions
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/transactions` | List all transactions for the current user |
-| POST | `/transactions` | Create a new transaction |
-| GET | `/transactions/{id}` | Get a single transaction (must belong to current user) |
-| PUT | `/transactions/{id}` | Update a transaction (partial updates supported) |
-| DELETE | `/transactions/{id}` | Delete a transaction |
-| GET | `/transactions/summary` | Get current month's total earned, spent, and net |
+| GET | `/transactions` | List your transactions, newest date first, with `seq_number` |
+| POST | `/transactions` | Create (201) |
+| GET | `/transactions/summary` | This month's `total_earned`, `total_spent`, `net` |
+| GET | `/transactions/{id}` | Get one (404 if missing or not yours) |
+| PUT | `/transactions/{id}` | Partial update |
+| DELETE | `/transactions/{id}` | Delete (204) |
 
 ### Categories
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/categories` | List built-in + user-defined categories |
+| GET | `/categories` | System defaults plus yours, alphabetical |
+| POST | `/categories` | Create (201). 409 on a duplicate name, ignoring case. |
+| DELETE | `/categories/{id}` | Delete your own category (204). 404 for system defaults or other users' categories, 409 if transactions use it. |
 
-> Full request/response schemas are available in the interactive docs at `/docs` once the backend is running.
+### Analytics
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/analytics/spending-by-category` | All-time DEBIT minus REFUND per category. Categories at zero or below are left out. |
+| GET | `/analytics/income-by-category` | All-time CREDIT per category |
+
+Both return `category_id`, `category_name` and `total`, sorted by total (desc), then name, then id. `total` is a decimal string such as `"800.00"`.
 
 ---
 
 ## Authentication
 
-- Passwords are hashed with **bcrypt** (via `passlib`) before storage — plaintext passwords are never stored or logged.
-- On login, the backend issues a **JWT access token** signed with `JWT_SECRET_KEY`.
-- The frontend sends this token in the `Authorization: Bearer <token>` header on every protected request.
-- A FastAPI dependency (`get_current_user`) decodes and validates the token on each request, and rejects invalid/expired tokens.
-- **Current limitation:** access tokens are long-lived and there is no refresh token flow yet. This is a known gap and is first on the security-hardening list (see [Roadmap](#roadmap)).
+- Passwords are hashed with bcrypt (`passlib`). Signup requires 8 to 20 characters with an uppercase letter, a digit and a special character.
+- **Access token:** JWT signed with `SECRET_KEY`, contains `sub` (user id) and `type: "access"`, expires after `ACCESS_TOKEN_EXPIRE_MINUTES`. The frontend keeps it in `localStorage` and sends it as a Bearer token.
+- **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only a bcrypt hash is stored, in `refresh_tokens`.
+- **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure` only when `ENVIRONMENT=production`.
+- **Refresh flow:** on a 401, the frontend calls `POST /auth/refresh` once (shared between parallel requests) and retries the request with the new access token. If refresh fails, the user is logged out.
+- **Rotation:** not implemented. `/auth/refresh` returns a new access token and the same refresh token stays valid until it expires or is revoked.
+- **Logout:** marks the stored refresh token as revoked and clears the cookie. Access tokens already issued stay valid until they expire.
+
+---
+
+## Security Decisions
+
+- **404 for both "not found" and "not yours":** transaction and category lookups filter by owner, so other users' ids are not revealed.
+- **Category delete uses the database:** the transactions foreign key is `ON DELETE RESTRICT`, and the relationship uses `passive_deletes="all"` so the ORM does not null out `category_id` before Postgres can refuse the delete.
+- **SQLSTATE 23001 and 23503:** PostgreSQL 18 raises 23001 for RESTRICT, older versions raise 23503. Both map to 409. Any other integrity error is re-raised as a 500.
+- **Rate limiting:** signup and login are limited per client IP with slowapi.
+- **Hashed refresh tokens:** the database stores only a bcrypt hash of each refresh token, and logout revokes it server side.
+- **Separate token secrets and a type claim:** refresh and access tokens use different secrets, and `get_current_user` rejects a refresh token used as an access token.
+- **Update cannot change ownership:** `PUT /transactions/{id}` drops `id` and `user_id` from the update.
 
 ---
 
 ## Data Models
 
 ### User
-- `id`, `email` (unique), `hashed_password`, `created_at`
-- Has many `Transaction`s
+- `id`, `email` (unique), `hashed_password`
+- Has many transactions, categories and refresh tokens
 
 ### Transaction
-- `id`, `user_id` (FK → User), `amount` (`Numeric`, never `float`), `type` (enum: `CREDIT` / `DEBIT`), `category_id` (FK → Category), `description`, `transaction_date`, `created_at`
-- Belongs to a `User`, belongs to a `Category`
+- `id`, `user_id`, `transaction_date` (timezone-aware), `type` (`CREDIT` / `DEBIT` / `REFUND`), `amount` (`Numeric(10, 2)`, positive for all types; enforced by the API schema, not a database constraint), `category_id` (`ON DELETE RESTRICT`), `description`, `created_at`
 
 ### Category
-- `id`, `name`, `is_default` (built-in vs. user-created), `user_id` (nullable — null for built-in categories)
+- `id`, `name` (max 50), `user_id` (null for system defaults, `ON DELETE CASCADE`)
+- Unique on `(user_id, lower(name))` with `NULLS NOT DISTINCT`
 
-> Additional models (`Friend`, `Split`, `SplitParticipant`) are planned for the expense-splitting feature — see roadmap.
+### RefreshToken
+- `id`, `user_id` (`ON DELETE CASCADE`), `token_hash`, `expires_at`, `created_at`, `revoked`
+
+Planned for expense splitting: `Friend`, `Split`, `SplitParticipant` (see [ROADMAP.md](ROADMAP.md)).
 
 ---
 
 ## Development Workflow
 
-- **Backend code is written by hand** — this project is a learning exercise as much as a product, so all backend logic is written and understood line-by-line, not generated.
-- **Frontend is scaffolded/vibe-coded** — frontend work is lower priority for learning purposes but still fully functional and tested against the live backend.
+- **Authorship:** all backend design decisions are mine. Some backend code was written with AI assistance, and every line was reviewed and tested before it was committed.
 - **Commit convention:** [Conventional Commits](https://www.conventionalcommits.org/)
-  - `feat:` — new feature
-  - `fix:` — bug fix
-  - `chore:` — tooling, config, dependency changes
-  - `refactor:` — restructuring without behavior change
-  - `docs:` — documentation only
-  - `wip:` — work in progress, used when stopping mid-task
-- **Daily habit:** small commits, pushed daily (even on light days) to `master`.
-- **Type safety:** enum values (e.g., `TransactionType.CREDIT`) are used instead of raw strings throughout the codebase.
+  - `feat:` new feature
+  - `fix:` bug fix
+  - `refactor:` restructuring without behavior change
+  - `docs:` documentation only
+  - `chore:` tooling, config, dependencies
+- Enum values (for example `TransactionType.CREDIT`) are used instead of raw strings in the backend.
+- Routes that use the sync SQLAlchemy session are plain `def`, so FastAPI runs them in its threadpool.
 
 ---
 
 ## Testing
 
-Manual end-to-end testing is done against the live local backend + frontend (no mocks) covering:
-- Auth flows (login, invalid password, duplicate signup, logout)
-- Full transaction CRUD, including summary auto-refresh after create/edit/delete
-- Mobile responsiveness (tested at 375×812 viewport)
-- Console error checks
-
-Test reports are kept in `docs/` (planned) as the test suite grows. Automated testing (pytest for backend) is not yet in place — currently a manual process, with automated tests planned as the project matures.
+There are no automated tests yet. Testing is manual, against a local backend and frontend. A pytest suite for analytics and the monthly summary is planned in Phase 1.
 
 ---
 
-## Deployment (Planned)
+## Deployment
 
-Not yet deployed. Planned architecture:
+Not deployed yet. This is Phase 2 in [ROADMAP.md](ROADMAP.md):
 
-- **Frontend** → Vercel (auto-deploy from `master`)
-- **Backend** → Render (auto-deploy from `master`)
-- **Database** → Supabase (PostgreSQL), with local PostgreSQL used for development
-- Secrets managed via each platform's environment variable panel — never committed to the repo
-- Error tracking and load testing planned before public launch
+- Frontend on Vercel, backend on Render, database on Supabase
+- Before going live: CORS origins from env, a refresh cookie that works across the frontend and API domains, real client IPs for rate limiting behind the proxy, CI, secrets in each platform's settings, monitoring and a load test
 
 ---
 
 ## Roadmap
 
-High-level plan (see full details in local planning notes):
+Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
-1. **Security hardening** — JWT refresh tokens, rate limiting, input validation audit, reversible migrations (in progress, alongside feature work)
-2. **Category breakdown + graphs** — new summary-by-category endpoint, pie/bar charts with Recharts
-3. **Expense splitting** — Splitwise-style shared expense tracking, friend management (by email), settlement logic, net balance calculation
-4. **Production deployment** — Render + Supabase + Vercel, monitoring, load testing
-5. **AI spending insights** *(stretch goal, deferred)*
-
-This project is actively evolving — the roadmap above reflects current intent, not a fixed contract.
+0. **Security and stability:** mostly done. Open: access token revocation, refresh token hash fix, evaluate `python-jose` and `passlib`.
+1. **Category analytics and graphs:** in progress
+2. **Production deployment** (Render + Supabase + Vercel)
+3. **Expense splitting**
+4. **AI analysis** (stretch, deferred)
 
 ---
 
 ## Known Limitations
 
-- No JWT refresh tokens yet — access tokens are long-lived (security gap, actively being addressed)
-- No rate limiting yet — auth and API endpoints are currently unprotected against abuse
-- No automated test suite — testing is currently manual/end-to-end
-- Not yet deployed — runs locally only
-- Expense splitting, category graphs, and AI insights are not yet implemented
+- No automated tests
+- Not deployed; runs locally only
+- Access tokens stay valid after logout until they expire
+- Refresh tokens are not rotated, and old rows in `refresh_tokens` are never cleaned up
+- Refresh token hashes only cover the first 72 bytes of the token (bcrypt limit), so two refresh tokens for the same user issued close together can match the same row
+- The access token is stored in `localStorage`, so an XSS bug could read it
+- Rate limits cover only signup and login, are in-memory and are per process
+- CORS allows only `http://localhost:3000` (hard-coded)
+- Analytics are all-time only, with no date filters, and there is no income chart yet
+- A refund recorded under a different category than the purchase skews per-category spending
+- `requirements.txt` is missing `email-validator`
+- One account per user, so there is no "amount cannot exceed balance" check
 
 ---
 
 ## License
 
-MIT
+MIT (no LICENSE file in the repo yet)
