@@ -1,16 +1,30 @@
-# React + Vite
+# LedgerLines frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite 8 + Tailwind CSS 4, with Recharts for the spending chart.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```powershell
+npm install
+npm run dev
+```
 
-## React Compiler
+- Runs on `http://localhost:3000`. The port is fixed (`strictPort` in `vite.config.js`) because the backend CORS config only allows this origin.
+- Needs Node `^20.19.0` or `>=22.12.0`.
+- The backend must be running at `http://localhost:8000` (see the root [README](../README.md)).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## API client
 
-## Expanding the ESLint configuration
+All requests go through `src/api.js`:
+- `API_BASE` is hard-coded to `http://localhost:8000`.
+- Every request sends `credentials: "include"` so the refresh cookie is sent.
+- On a 401 it calls `POST /auth/refresh` once, shared between parallel requests, and retries with the new access token.
+- The access token is kept in `localStorage` under `ll_token`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Other scripts
+
+```powershell
+npm run build
+npm run lint
+npm run preview
+```

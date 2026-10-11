@@ -34,7 +34,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Rate limiter that sees the real client IP behind the proxy (currently `get_remote_address`)
 - [ ] Per-environment settings
 - [ ] CI
-- [ ] `.env.example`
+- [x] `.env.example`
 - [ ] Secrets in each platform's env settings
 - [ ] Monitoring
 - [ ] Load test
