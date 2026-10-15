@@ -1,4 +1,10 @@
+from zoneinfo import ZoneInfo
 from pydantic_settings import BaseSettings
+
+# Months and weeks are bucketed in the user's local time, not the DB session's.
+# Single app-wide zone for v1; replace with a per-user setting later
+REPORTING_TIMEZONE_NAME = "Asia/Kolkata"
+REPORTING_TIMEZONE = ZoneInfo(REPORTING_TIMEZONE_NAME)
 
 # Automatically loads, type-checks, and validates system environment variables
 class Settings(BaseSettings):

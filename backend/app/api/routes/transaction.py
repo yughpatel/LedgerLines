@@ -8,9 +8,10 @@ from app.models.user import User
 from app.services.category import validate_category
 from app.services.transaction import get_user_transactions
 import calendar
-from datetime import date, datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import func, select, case
+from app.core.config import REPORTING_TIMEZONE
 
 router = APIRouter(prefix="/transactions", tags=["transaction"])
 
@@ -41,14 +42,16 @@ def list_transactions(session: Session = Depends(get_db),
 @router.get("/summary", status_code=status.HTTP_200_OK, response_model=MonthlySummaryResponse)
 def get_monthly_summary(session: Session = Depends(get_db),
                         current_user: User = Depends(get_current_user)):
-    today = date.today()
+    # "This month" is the IST calendar month. Both the date and the boundaries use
+    # IST, so a transaction at 00:30 IST on the 1st isn't counted in the month before
+    today = datetime.now(REPORTING_TIMEZONE)
 
     # Establish strict timezone-aware boundaries using a half-open interval
-    start_of_month = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
+    start_of_month = datetime(today.year, today.month, 1, tzinfo=REPORTING_TIMEZONE)
     if today.month == 12:
-        start_of_next_month = datetime(today.year + 1, 1, 1, tzinfo=timezone.utc)
+        start_of_next_month = datetime(today.year + 1, 1, 1, tzinfo=REPORTING_TIMEZONE)
     else:
-        start_of_next_month = datetime(today.year, today.month + 1, 1, tzinfo=timezone.utc)
+        start_of_next_month = datetime(today.year, today.month + 1, 1, tzinfo=REPORTING_TIMEZONE)
 
     stmt = select(
         func.coalesce(

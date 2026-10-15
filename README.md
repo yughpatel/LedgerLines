@@ -53,7 +53,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
   - Amounts stored as `Numeric(10, 2)`, never `float`
   - Each listed transaction gets a per-user sequence number (`seq_number`, from `ROW_NUMBER()`)
 - **Categories:** system defaults (Food, Rent, Travel, Utilities, Other) plus custom categories, unique per user ignoring case. Custom categories can be deleted if no transaction uses them.
-- **Monthly summary:** total earned, total spent and net for the current calendar month (UTC month boundaries), in one SQL query
+- **Monthly summary:** total earned, total spent and net for the current calendar month in IST (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
 - **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
 - **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards and a spending-by-category chart. The summary and chart refresh after every create, edit or delete.
