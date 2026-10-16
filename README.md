@@ -54,7 +54,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
   - Each listed transaction gets a per-user sequence number (`seq_number`, from `ROW_NUMBER()`)
 - **Categories:** system defaults (Food, Rent, Travel, Utilities, Other) plus custom categories, unique per user ignoring case. Custom categories can be deleted if no transaction uses them.
 - **Monthly summary:** total earned, total spent and net for the current calendar month in IST (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
-- **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties
+- **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
 - **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards and a spending-by-category chart. The summary and chart refresh after every create, edit or delete.
 
@@ -301,8 +301,11 @@ Protected endpoints need `Authorization: Bearer <access token>`. Full schemas ar
 |---|---|---|
 | GET | `/analytics/spending-by-category` | All-time DEBIT minus REFUND per category. Categories at zero or below are left out. |
 | GET | `/analytics/income-by-category` | All-time CREDIT per category |
+| GET | `/analytics/trend` | Income and spending per `day` or `week` for one IST calendar month. Query: `year` + `month` (both or neither, default current month, 2020 onward, not in the future), `bucket` (default `day`). |
 
-Both return `category_id`, `category_name` and `total`, sorted by total (desc), then name, then id. `total` is a decimal string such as `"800.00"`.
+The two category endpoints return `category_id`, `category_name` and `total`, sorted by total (desc), then name, then id. `total` is a decimal string such as `"800.00"`.
+
+`/analytics/trend` returns one row per bucket with `start`, `end` (exclusive), `income` and `spending`, oldest first, with `"0.00"` for empty buckets. Weeks start on Monday and are clipped to the month, so the first and last week can be shorter than 7 days. Spending can be negative when refunds outweigh debits in a bucket.
 
 ---
 
@@ -401,7 +404,8 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - CORS allows only `http://localhost:3000` (hard-coded)
-- Analytics are all-time only, with no date filters, and there is no income chart yet
+- Category analytics are all-time only, with no date filters. The trend endpoint covers one month at a time and has no frontend chart yet. There is no income chart yet.
+- All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
 - A refund recorded under a different category than the purchase skews per-category spending
 - `requirements.txt` is missing `email-validator`
 - One account per user, so there is no "amount cannot exceed balance" check

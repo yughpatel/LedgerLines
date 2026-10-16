@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
@@ -22,8 +22,10 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] `GET /analytics/income-by-category` endpoint
 - [x] `REFUND` transaction type (reduces spending, not counted as income)
 - [ ] Income chart in the frontend
-- [ ] Trend-over-time endpoint
-- [ ] Date filters on analytics endpoints
+- [x] Trend-over-time endpoint (`GET /analytics/trend`, day or week buckets within one IST month)
+- [ ] Trend chart in the frontend
+- [ ] Multi-month trend (month buckets over a range, with a bucket-count cap)
+- [ ] Date filters on the category analytics endpoints
 - [ ] pytest suite for analytics and the monthly summary
 - [ ] Refund edge cases (refund in a different category than the purchase, refunds larger than spending)
 
