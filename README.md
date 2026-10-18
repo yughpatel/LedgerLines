@@ -120,8 +120,11 @@ LedgerLines/
 │   │       ├── category.py          # Category access checks
 │   │       └── transaction.py       # Transaction list with seq_number
 │   ├── alembic/versions/            # Migrations
+│   ├── tests/                       # pytest suite (conftest, factories, test_*.py)
 │   ├── alembic.ini
+│   ├── pytest.ini
 │   ├── requirements.txt
+│   ├── requirements-dev.txt         # requirements.txt + pytest, httpx
 │   └── .env.example
 ├── frontend/
 │   ├── src/
@@ -369,7 +372,26 @@ Planned for expense splitting: `Friend`, `Split`, `SplitParticipant` (see [ROADM
 
 ## Testing
 
-There are no automated tests yet. Testing is manual, against a local backend and frontend. A pytest suite for analytics and the monthly summary is planned in Phase 1.
+Backend tests use pytest against a real PostgreSQL database (no mocks). They cover the trend endpoint, the monthly summary, the category analytics, refunds, ownership between users, and signup/login.
+
+One-time setup:
+
+```powershell
+# As a Postgres superuser (pgAdmin or psql)
+CREATE DATABASE ledgerlines_test OWNER ledgerlines_user;
+```
+
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+pytest
+```
+
+- The suite uses `ledgerlines_test` on the same server as `DATABASE_URL`, or `TEST_DATABASE_URL` if set. It refuses to run against a database whose name doesn't end in `_test`, or one that isn't on localhost.
+- Migrations run once per session. Each test runs inside a transaction that is rolled back, so nothing is left behind.
+- Tests use fixed dates; "today" is pinned with the `freeze_now` fixture.
+- The frontend has no automated tests.
 
 ---
 
@@ -396,8 +418,9 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
 ## Known Limitations
 
-- No automated tests
+- No frontend tests, and no backend tests yet for transaction CRUD or category create/delete
 - Not deployed; runs locally only
+- A refund doesn't have to match a purchase, so a large refund can make spending negative with nothing to show it's bad data
 - Access tokens stay valid after logout until they expire
 - Refresh tokens are not rotated, and old rows in `refresh_tokens` are never cleaned up
 - Refresh token hashes only cover the first 72 bytes of the token (bcrypt limit), so two refresh tokens for the same user issued close together can match the same row
