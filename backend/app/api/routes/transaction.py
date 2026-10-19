@@ -84,6 +84,10 @@ def get_monthly_summary(session: Session = Depends(get_db),
     net_balance = total_earned - total_spent
 
     return {
+        # Sent so the frontend labels the card with the month these totals cover,
+        # instead of working it out in the browser's own timezone
+        "year": today.year,
+        "month": today.month,
         "total_earned": total_earned,
         "total_spent": total_spent,
         "net": net_balance

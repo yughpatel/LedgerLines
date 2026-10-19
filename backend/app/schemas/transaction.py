@@ -118,6 +118,9 @@ class TransactionUpdate(BaseModel):
 
 
 class MonthlySummaryResponse(BaseModel):
+    # The IST calendar month the totals cover
+    year: int
+    month: int
     total_earned: Decimal
     total_spent: Decimal
     net: Decimal

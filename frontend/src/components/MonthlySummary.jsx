@@ -58,14 +58,16 @@ export default function MonthlySummary({ token, refreshKey = 0 }) {
   }, [token, refreshKey]);
 
   // /transactions/summary covers only the current calendar month, so the period is
-  // named here — otherwise a transaction dated in another month looks like the
-  // summary silently failed to update.
+  // named here, otherwise a transaction dated in another month looks like the
+  // summary silently failed to update. The month comes from the backend (IST), not
+  // the browser's clock, so the label always matches the totals under it.
+  const periodLabel = summary
+    ? new Date(summary.year, summary.month - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : "";
   const heading = (
     <h2 className="text-lg font-medium text-slate-800 mb-3">
       This month{" "}
-      <span className="text-sm font-normal text-slate-500">
-        · {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-      </span>
+      {periodLabel && <span className="text-sm font-normal text-slate-500">· {periodLabel}</span>}
     </h2>
   );
 

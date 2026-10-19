@@ -9,8 +9,11 @@ CREDIT, DEBIT, REFUND = TransactionType.CREDIT, TransactionType.DEBIT, Transacti
 def get_summary(client, user):
     response = client.get("/transactions/summary", headers=auth_headers(user))
     assert response.status_code == 200, response.text
+    body = response.json()
     # Compared as Decimals: an empty sum is served as "0", a non-empty one as "0.00"
-    return {key: Decimal(value) for key, value in response.json().items()}
+    for key in ("total_earned", "total_spent", "net"):
+        body[key] = Decimal(body[key])
+    return body
 
 
 def test_month_edges_are_ist_midnights(client, db_session, freeze_now):
@@ -24,7 +27,13 @@ def test_month_edges_are_ist_midnights(client, db_session, freeze_now):
 
     summary = get_summary(client, user)
 
-    assert summary == {"total_earned": Decimal("1000.00"), "total_spent": Decimal("555.00"), "net": Decimal("445.00")}
+    assert summary == {
+        "year": 2026,
+        "month": 10,
+        "total_earned": Decimal("1000.00"),
+        "total_spent": Decimal("555.00"),
+        "net": Decimal("445.00"),
+    }
 
 
 def test_month_is_taken_from_the_ist_date_not_the_server_date(client, db_session, freeze_now):
@@ -34,7 +43,10 @@ def test_month_is_taken_from_the_ist_date_not_the_server_date(client, db_session
     make_transaction(db_session, user, DEBIT, "50.00", at="2026-10-31 12:00")
     make_transaction(db_session, user, DEBIT, "60.00", at="2026-11-01 00:30")
 
-    assert get_summary(client, user)["total_spent"] == Decimal("60.00")
+    summary = get_summary(client, user)
+
+    assert (summary["year"], summary["month"]) == (2026, 11)
+    assert summary["total_spent"] == Decimal("60.00")
 
 
 def test_december_rolls_over_to_january_of_the_next_year(client, db_session, freeze_now):
@@ -43,14 +55,17 @@ def test_december_rolls_over_to_january_of_the_next_year(client, db_session, fre
     make_transaction(db_session, user, DEBIT, "75.00", at="2025-12-31 23:59:59.999999")
     make_transaction(db_session, user, DEBIT, "99.00", at="2026-01-01 00:00")
 
-    assert get_summary(client, user)["total_spent"] == Decimal("75.00")
+    summary = get_summary(client, user)
+
+    assert (summary["year"], summary["month"]) == (2025, 12)
+    assert summary["total_spent"] == Decimal("75.00")
 
 
 def test_empty_month_is_all_zero(client, db_session, freeze_now):
     freeze_now("2026-10-15 12:00")
     user = make_user(db_session)
 
-    assert get_summary(client, user) == {"total_earned": 0, "total_spent": 0, "net": 0}
+    assert get_summary(client, user) == {"year": 2026, "month": 10, "total_earned": 0, "total_spent": 0, "net": 0}
 
 
 def test_refund_in_a_later_month_makes_spending_negative(client, db_session, freeze_now):

@@ -285,7 +285,7 @@ Protected endpoints need `Authorization: Bearer <access token>`. Full schemas ar
 |---|---|---|
 | GET | `/transactions` | List your transactions, newest date first, with `seq_number` |
 | POST | `/transactions` | Create (201) |
-| GET | `/transactions/summary` | This month's `total_earned`, `total_spent`, `net` |
+| GET | `/transactions/summary` | This IST month's `year`, `month`, `total_earned`, `total_spent`, `net` |
 | GET | `/transactions/{id}` | Get one (404 if missing or not yours) |
 | PUT | `/transactions/{id}` | Partial update |
 | DELETE | `/transactions/{id}` | Delete (204) |

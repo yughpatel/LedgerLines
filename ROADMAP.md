@@ -31,7 +31,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Decide on refunds with no matching purchase: link refunds to a purchase (`refund_of_id`) or explicitly accept them. Today a refund of any amount is accepted and can make spending negative; `test_refund_without_any_purchase_is_accepted` documents this and should change with the fix
 - [ ] Refund recorded in a different category than its purchase (needs the same link)
 - [ ] Make the 2020-01-01 transaction date floor an IST midnight (currently UTC, so 00:00 to 05:30 IST on Jan 1, 2020 is rejected)
-- [ ] Summary card month label from the backend instead of the browser's timezone
+- [x] Summary card month label from the backend instead of the browser's timezone
 
 ## Phase 2: Production deployment (Render + Supabase + Vercel)
 
