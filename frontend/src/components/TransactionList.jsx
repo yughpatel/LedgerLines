@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { deleteTransaction, getTransactions } from "../api";
+import { deleteTransaction, getIncomeByCategory, getSpendingByCategory, getTransactions } from "../api";
+import CategoryBreakdown from "./CategoryBreakdown";
 import MonthlySummary from "./MonthlySummary";
-import SpendingByCategory from "./SpendingByCategory";
 import TransactionForm from "./TransactionForm";
+import TrendChart, { INCOME_COLOR, SPENDING_COLOR } from "./TrendChart";
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -43,6 +44,7 @@ export default function TransactionList({ token, userEmail, onLogout }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [summaryVersion, setSummaryVersion] = useState(0);
+  const [period, setPeriod] = useState(null);
 
   async function load() {
     setError("");
@@ -116,8 +118,28 @@ export default function TransactionList({ token, userEmail, onLogout }) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-        <MonthlySummary token={token} refreshKey={summaryVersion} />
-        <SpendingByCategory token={token} refreshKey={summaryVersion} />
+        <MonthlySummary token={token} refreshKey={summaryVersion} onPeriod={setPeriod} />
+        <TrendChart token={token} period={period} refreshKey={summaryVersion} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <CategoryBreakdown
+            token={token}
+            refreshKey={summaryVersion}
+            title="Spending by category"
+            fetchRows={getSpendingByCategory}
+            color={SPENDING_COLOR}
+            noun="spending"
+            emptyText="Add a DEBIT transaction to see how your spending breaks down."
+          />
+          <CategoryBreakdown
+            token={token}
+            refreshKey={summaryVersion}
+            title="Income by category"
+            fetchRows={getIncomeByCategory}
+            color={INCOME_COLOR}
+            noun="income"
+            emptyText="Add a CREDIT transaction to see where your income comes from."
+          />
+        </div>
 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-800">Transactions</h2>

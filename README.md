@@ -56,11 +56,11 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
 - **Monthly summary:** total earned, total spent and net for the current calendar month in IST (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
 - **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
-- **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards and a spending-by-category chart. The summary and chart refresh after every create, edit or delete.
+- **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards, a daily/weekly income and spending chart for the current month, and spending-by-category and income-by-category charts. The summary and charts refresh after every create, edit or delete.
 
 ### Planned
 
-See [ROADMAP.md](ROADMAP.md). Next up: an income chart, trend over time, date filters and a pytest suite (Phase 1), then deployment (Phase 2).
+See [ROADMAP.md](ROADMAP.md). Next up: the remaining Phase 1 items (refund linking, date filters on category analytics), then deployment (Phase 2).
 
 ---
 
@@ -129,13 +129,15 @@ LedgerLines/
 ├── frontend/
 │   ├── src/
 │   │   ├── api.js                   # API client, 401 refresh interceptor
+│   │   ├── format.js                # Money formatting from decimal strings, date parsing
 │   │   ├── App.jsx
 │   │   └── components/
 │   │       ├── Auth.jsx
-│   │       ├── TransactionList.jsx
+│   │       ├── TransactionList.jsx  # Dashboard layout
 │   │       ├── TransactionForm.jsx
 │   │       ├── MonthlySummary.jsx
-│   │       └── SpendingByCategory.jsx
+│   │       ├── TrendChart.jsx       # Daily/weekly income and spending bars
+│   │       └── CategoryBreakdown.jsx # Spending and income by category
 │   ├── package.json
 │   └── vite.config.js
 ├── ROADMAP.md
@@ -427,7 +429,7 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - CORS allows only `http://localhost:3000` (hard-coded)
-- Category analytics are all-time only, with no date filters. The trend endpoint covers one month at a time and has no frontend chart yet. There is no income chart yet.
+- Category analytics are all-time only, with no date filters. The trend chart shows only the current month (no month picker yet).
 - All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
 - A refund recorded under a different category than the purchase skews per-category spending
 - `requirements.txt` is missing `email-validator`

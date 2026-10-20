@@ -41,7 +41,7 @@ function SkeletonCard() {
   );
 }
 
-export default function MonthlySummary({ token, refreshKey = 0 }) {
+export default function MonthlySummary({ token, refreshKey = 0, onPeriod }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +56,13 @@ export default function MonthlySummary({ token, refreshKey = 0 }) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [token, refreshKey]);
+
+  // Shares the backend's IST month with the trend chart, so both always show the same one
+  const year = summary?.year;
+  const month = summary?.month;
+  useEffect(() => {
+    if (year && month && onPeriod) onPeriod({ year, month });
+  }, [year, month, onPeriod]);
 
   // /transactions/summary covers only the current calendar month, so the period is
   // named here, otherwise a transaction dated in another month looks like the

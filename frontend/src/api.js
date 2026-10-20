@@ -131,6 +131,15 @@ export function getSpendingByCategory(token) {
   return request("/analytics/spending-by-category", { token });
 }
 
+export function getIncomeByCategory(token) {
+  return request("/analytics/income-by-category", { token });
+}
+
+export function getTrend(token, { year, month, bucket }) {
+  const params = new URLSearchParams({ year, month, bucket });
+  return request(`/analytics/trend?${params}`, { token });
+}
+
 export function getCategories(token) {
   return request("/categories", { token });
 }
