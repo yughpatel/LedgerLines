@@ -1,3 +1,5 @@
+import hashlib
+import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
@@ -30,6 +32,18 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
+def hash_refresh_token(raw_token: str) -> str:
+    """
+    SHA-256 hex digest of a refresh token, which is what the database stores.
+
+    Not bcrypt: a refresh token is long and random, so slow hashing adds nothing, and
+    bcrypt only reads the first 72 bytes, which for these JWTs is mostly the same
+    header and user id. A plain digest covers the whole token and can be looked up
+    directly by index.
+    """
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
 def create_refresh_token(db: Session, user_id: int) -> str:
     """
     Generates a raw JWT refresh token, hashes it, saves the hash
@@ -42,12 +56,16 @@ def create_refresh_token(db: Session, user_id: int) -> str:
     payload = {
         "sub": str(user_id),
         "exp": expires_at,
-        "type": "refresh"  # Explicitly label token type to prevent mix-ups with access tokens
+        "type": "refresh",  # Explicitly label token type to prevent mix-ups with access tokens
+        # exp only has whole seconds, so without this two logins in the same second would
+        # produce identical tokens and collide on the unique token_hash index.
+        # uuid4 comes from the OS's secure random source
+        "jti": uuid.uuid4().hex,
     }
     # Encode into a raw JWT string
     raw_refresh_token = jwt.encode(payload, settings.refresh_token_secret_key, algorithm=settings.algorithm)
     # Hash that raw string
-    token_hash = pwd_context.hash(raw_refresh_token)
+    token_hash = hash_refresh_token(raw_refresh_token)
     # Save a new row to the refresh_tokens table
     db_refresh_token = RefreshToken(
         user_id=user_id,
@@ -106,19 +124,17 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Invalid token payload claims",
         )
 
-    # Query active, unrevoked database tokens for this user
-    active_tokens = (
+    # One indexed lookup on the digest. Comparing in SQL is fine: both sides are hashes
+    # of a long random token, so there is no timing leak worth protecting against
+    matched_token_record = (
         db.query(RefreshToken)
-        .filter(RefreshToken.user_id == int(user_id), RefreshToken.revoked == False)
-        .all()
+        .filter(
+            RefreshToken.token_hash == hash_refresh_token(raw_token),
+            RefreshToken.user_id == int(user_id),
+            RefreshToken.revoked.is_(False),
+        )
+        .first()
     )
-
-    # Linearly verify the raw string against stored database hashes
-    matched_token_record = None
-    for row in active_tokens:
-        if pwd_context.verify(raw_token, row.token_hash):
-            matched_token_record = row
-            break
 
     if not matched_token_record:
         raise HTTPException(

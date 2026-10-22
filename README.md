@@ -73,7 +73,7 @@ See [ROADMAP.md](ROADMAP.md). Next up: the remaining Phase 1 items (refund linki
 | Database | PostgreSQL |
 | ORM | SQLAlchemy 2.0 |
 | Validation | Pydantic v2, pydantic-settings |
-| Auth | JWT (`python-jose`), password and refresh token hashing (`passlib` with `bcrypt==4.0.1`) |
+| Auth | JWT (`python-jose`), password hashing (`passlib` with `bcrypt==4.0.1`), refresh tokens stored as SHA-256 digests (`hashlib`) |
 | Rate limiting | slowapi (in-memory) |
 | Migrations | Alembic |
 | Server | Uvicorn |
@@ -318,7 +318,7 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 
 - Passwords are hashed with bcrypt (`passlib`). Signup requires 8 to 20 characters with an uppercase letter, a digit and a special character.
 - **Access token:** JWT signed with `SECRET_KEY`, contains `sub` (user id) and `type: "access"`, expires after `ACCESS_TOKEN_EXPIRE_MINUTES`. The frontend keeps it in `localStorage` and sends it as a Bearer token.
-- **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only a bcrypt hash is stored, in `refresh_tokens`.
+- **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, a random `jti`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only its SHA-256 digest is stored, in `refresh_tokens` (unique, looked up directly by index).
 - **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure` only when `ENVIRONMENT=production`.
 - **Refresh flow:** on a 401, the frontend calls `POST /auth/refresh` once (shared between parallel requests) and retries the request with the new access token. If refresh fails, the user is logged out.
 - **Rotation:** not implemented. `/auth/refresh` returns a new access token and the same refresh token stays valid until it expires or is revoked.
@@ -332,7 +332,7 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 - **Category delete uses the database:** the transactions foreign key is `ON DELETE RESTRICT`, and the relationship uses `passive_deletes="all"` so the ORM does not null out `category_id` before Postgres can refuse the delete.
 - **SQLSTATE 23001 and 23503:** PostgreSQL 18 raises 23001 for RESTRICT, older versions raise 23503. Both map to 409. Any other integrity error is re-raised as a 500.
 - **Rate limiting:** signup and login are limited per client IP with slowapi.
-- **Hashed refresh tokens:** the database stores only a bcrypt hash of each refresh token, and logout revokes it server side.
+- **Hashed refresh tokens:** the database stores only a SHA-256 digest of each refresh token, and logout revokes it server side. Not bcrypt: the tokens are long and random, so slow hashing adds nothing, and bcrypt only reads the first 72 bytes, which made tokens for the same user collide. A random `jti` keeps two logins in the same second from producing identical tokens.
 - **Separate token secrets and a type claim:** refresh and access tokens use different secrets, and `get_current_user` rejects a refresh token used as an access token.
 - **Update cannot change ownership:** `PUT /transactions/{id}` drops `id` and `user_id` from the update.
 
@@ -425,7 +425,6 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - A refund doesn't have to match a purchase, so a large refund can make spending negative with nothing to show it's bad data
 - Access tokens stay valid after logout until they expire
 - Refresh tokens are not rotated, and old rows in `refresh_tokens` are never cleaned up
-- Refresh token hashes only cover the first 72 bytes of the token (bcrypt limit), so two refresh tokens for the same user issued close together can match the same row
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - CORS allows only `http://localhost:3000` (hard-coded)

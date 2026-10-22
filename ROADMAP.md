@@ -13,7 +13,9 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Reversible migrations audit (enum cleanup on downgrade, backfill before NOT NULL)
 - [x] Category delete with `ON DELETE RESTRICT` (409 while transactions still use it)
 - [ ] Access token revocation after logout (jti blacklist or `token_version` on the user)
-- [ ] Fix refresh token hashing: bcrypt only reads the first 72 bytes, so two refresh tokens for the same user issued close together match each other's hash
+- [x] Fix refresh token hashing: SHA-256 digest with a unique index instead of bcrypt (which only read the first 72 bytes, so same-user tokens collided), plus a random `jti` per token
+- [ ] Refresh token rotation with reuse detection (reuse detection only means something once rotation exists)
+- [ ] Clean up expired and revoked rows in `refresh_tokens`
 - [ ] Evaluate `python-jose` and `passlib` (current FastAPI docs use PyJWT and pwdlib; deprecation unconfirmed)
 
 ## Phase 1: Category analytics and graphs
@@ -46,6 +48,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Load test
 - [ ] Redis for the rate limiter when running more than one instance (currently in-memory)
 - [ ] Access token revocation (if not done in Phase 0)
+- Deploy note: migration `b81f3d2c9a47` deletes every stored refresh token, so every user is logged out once when it runs. Run it at a quiet time, not mid-session.
 
 ## Phase 3: Expense splitting
 

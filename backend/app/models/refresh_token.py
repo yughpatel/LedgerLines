@@ -17,7 +17,8 @@ class RefreshToken(Base):
         nullable=False,
         index=True
     )
-    token_hash: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    # SHA-256 hex digest, always 64 characters. Unique because the hash identifies the token
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     expires_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False
