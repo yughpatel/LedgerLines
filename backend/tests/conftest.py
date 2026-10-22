@@ -37,6 +37,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
+from app.core.limiter import limiter  # noqa: E402
 from app.db.session import engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -85,6 +86,10 @@ def client(db_session):
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+    # The limiter counts in process memory, so without this, signups and logins from
+    # earlier tests would count against later ones. Reset rather than disabled, so the
+    # real rate-limit path still runs in every test
+    limiter.reset()
     try:
         with TestClient(app) as test_client:
             yield test_client

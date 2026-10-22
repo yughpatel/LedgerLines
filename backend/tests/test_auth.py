@@ -2,7 +2,7 @@ import uuid
 
 # The rest of the suite signs tokens directly with auth_headers(); this file is the one
 # place the real signup and login path (hashing, rate limiter, refresh cookie) is covered.
-# Signup is limited to 2/minute per process, so a third signup here would get a 429
+# The client fixture resets the limiter, so each test starts with a fresh 2/minute budget
 
 
 def test_signup_then_login_then_me(client):
@@ -31,3 +31,14 @@ def test_login_with_wrong_password_is_401(client):
     # Without this, a failed or rate-limited signup would also give 401 and pass for the wrong reason
     assert signup.status_code == 201, signup.text
     assert response.status_code == 401
+
+
+def test_third_signup_in_a_minute_is_rate_limited(client):
+    # Proves the limiter is enforced, and (passing in any test order) that the fixture's
+    # reset is what keeps other tests' signups from counting here
+    statuses = [
+        client.post("/auth/signup", json={"email": f"rl-{uuid.uuid4().hex[:8]}@example.com", "password": "Str0ng!pass"}).status_code
+        for _ in range(3)
+    ]
+
+    assert statuses == [201, 201, 429]
