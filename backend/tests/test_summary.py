@@ -84,9 +84,9 @@ def test_refund_in_a_later_month_makes_spending_negative(client, db_session, fre
 
 
 def test_refund_without_any_purchase_is_accepted(client, db_session, freeze_now):
-    # Documents current behavior, not intended behavior: refunds aren't linked to a
-    # purchase, so a refund of the maximum amount silently makes spending negative.
-    # See ROADMAP (refund_of_id). A fix should change this test
+    # Intended behavior for v1: unlinked refunds are accepted on purpose, so a refund of
+    # the maximum amount with no purchase makes spending negative. If refunds are ever
+    # linked to a purchase (ROADMAP, Later: refund_of_id), this test should change
     freeze_now("2026-10-15 12:00")
     user = make_user(db_session)
 

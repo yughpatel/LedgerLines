@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
@@ -26,12 +26,9 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Income chart in the frontend
 - [x] Trend-over-time endpoint (`GET /analytics/trend`, day or week buckets within one IST month)
 - [x] Trend chart in the frontend (current month, daily or weekly)
-- [ ] Multi-month trend (month buckets over a range, with a bucket-count cap)
-- [ ] Date filters on the category analytics endpoints
 - [x] pytest suite for analytics and the monthly summary (plus ownership and signup/login)
 - [x] Refund edge cases covered by tests: refund in a later month, refund larger than a category's spending, refund with no purchase
-- [ ] Decide on refunds with no matching purchase: link refunds to a purchase (`refund_of_id`) or explicitly accept them. Today a refund of any amount is accepted and can make spending negative; `test_refund_without_any_purchase_is_accepted` documents this and should change with the fix
-- [ ] Refund recorded in a different category than its purchase (needs the same link)
+- [x] Decide on refunds with no matching purchase: unlinked refunds are accepted on purpose for v1. A refund of any amount is allowed and can make spending negative; `test_refund_without_any_purchase_is_accepted` pins this as intended behavior. Linking refunds to a purchase is deferred (see Later)
 - [x] Make the 2020-01-01 transaction date floor an IST midnight (was UTC, so 00:00 to 05:30 IST on Jan 1, 2020 was rejected)
 - [x] Summary card month label from the backend instead of the browser's timezone
 
@@ -49,6 +46,14 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Redis for the rate limiter when running more than one instance (currently in-memory)
 - [ ] Access token revocation (if not done in Phase 0)
 - Deploy note: migration `b81f3d2c9a47` deletes every stored refresh token, so every user is logged out once when it runs. Run it at a quiet time, not mid-session.
+
+## Later
+
+Deferred because nothing calls them yet. Pick them up when a real need appears.
+
+- [ ] Multi-month trend (month buckets over a range, with a bucket-count cap)
+- [ ] Date filters on the category analytics endpoints
+- [ ] Link refunds to their purchase (`refund_of_id`): catches refunds larger than the purchase, and refunds recorded under a different category. Would change `test_refund_without_any_purchase_is_accepted`
 
 ## Phase 3: Expense splitting
 

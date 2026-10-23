@@ -60,7 +60,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
 
 ### Planned
 
-See [ROADMAP.md](ROADMAP.md). Next up: the remaining Phase 1 items (refund linking, date filters on category analytics), then deployment (Phase 2).
+See [ROADMAP.md](ROADMAP.md). Next up: deployment (Phase 2). Refund linking, date filters on category analytics and a multi-month trend are deferred to "Later".
 
 ---
 
@@ -422,7 +422,7 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
 - No frontend tests, and no backend tests yet for transaction CRUD or category create/delete
 - Not deployed; runs locally only
-- A refund doesn't have to match a purchase, so a large refund can make spending negative with nothing to show it's bad data
+- Refunds aren't linked to a purchase (accepted on purpose for v1), so a refund larger than the purchase, or under a different category, isn't caught and can make spending negative
 - Access tokens stay valid after logout until they expire
 - Refresh tokens are not rotated, and old rows in `refresh_tokens` are never cleaned up
 - The access token is stored in `localStorage`, so an XSS bug could read it
