@@ -66,3 +66,13 @@ def test_revoked_token_fails_even_though_its_row_still_exists(db_session):
 
     assert exc.value.status_code == 401
     assert db_session.query(RefreshToken).filter_by(token_hash=hash_refresh_token(raw)).count() == 1
+
+def test_refresh_token_of_a_deleted_user_is_401(client, db_session):
+    user = make_user(db_session)
+    raw = create_refresh_token(db_session, user.id)
+    db_session.delete(user)
+    db_session.flush()
+
+    response = client.post("/auth/refresh", headers=refresh_headers(raw))
+
+    assert response.status_code == 401
