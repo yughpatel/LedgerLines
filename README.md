@@ -148,7 +148,7 @@ LedgerLines/
 
 ## Prerequisites
 
-- **Python:** developed on 3.14. Older versions are untested.
+- **Python:** 3.14, pinned in `.python-version`. Other versions, including 3.15, are untested.
 - **Node.js:** `^20.19.0` or `>=22.12.0` (required by Vite 8)
 - **PostgreSQL:** 15 or newer (the category index uses `NULLS NOT DISTINCT`). Developed against PostgreSQL 18.
 - **Git**
@@ -169,13 +169,12 @@ cd LedgerLines
 
 ```powershell
 cd backend
-python -m venv venv
+py -3.14 -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pip install email-validator==2.3.0
 ```
 
-`email-validator` is needed by the auth schemas (`EmailStr`) but is not in `requirements.txt` yet, so it is installed separately.
+`py -3.14` picks the pinned version explicitly. Plain `python` or `py` may use whatever version is newest on the machine.
 
 ### 3. Frontend
 
@@ -430,9 +429,7 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - CORS allows only `http://localhost:3000` (hard-coded)
 - Category analytics are all-time only, with no date filters. The trend chart shows only the current month (no month picker yet).
 - All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
-- A refund recorded under a different category than the purchase skews per-category spending
-- `requirements.txt` is missing `email-validator`
-- One account per user, so there is no "amount cannot exceed balance" check
+- A refund recorded under a different category than the purchase skews per-category spending- One account per user, so there is no "amount cannot exceed balance" check
 
 ---
 

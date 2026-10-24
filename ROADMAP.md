@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-23
+Last updated: 2026-10-24
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
@@ -34,6 +34,10 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 
 ## Phase 2: Production deployment (Render + Supabase + Vercel)
 
+- [x] Pin Python 3.14: `py -3.14 -m venv venv` in the README setup and a `.python-version` file at the repo root, which Render reads (3.15 is the `py` launcher default on the dev machine, and the project is untested on it). CI should read the same file when it's added
+- [x] Add `email-validator` to `requirements.txt` (needed by `EmailStr`; a fresh install crashes on import without it)
+- [ ] Frontend API base URL from a Vite env var instead of hard-coded `http://localhost:8000`
+- [ ] Refresh cookie `path` configurable (needed if the API is proxied under `/api`)
 - [ ] CORS origins from an env var (currently hard-coded to `http://localhost:3000`)
 - [ ] Refresh cookie that works between the frontend and the API (currently `samesite=lax`; needs same-site domains or a different design)
 - [ ] Rate limiter that sees the real client IP behind the proxy (currently `get_remote_address`)
