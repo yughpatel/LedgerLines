@@ -1,5 +1,5 @@
 from zoneinfo import ZoneInfo
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Months and weeks are bucketed in the user's local time, not the DB session's.
 # Single app-wide zone for v1; replace with a per-user setting later
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     # Tells Pydantic to read configuration variables from a local '.env' file
-    class Config:
-        env_file = ".env"
+
+    model_config = SettingsConfigDict(env_file=".env")
 
 # Created once here as a Singleton instance to prevent repeatedly reloading the disk file
 settings = Settings()

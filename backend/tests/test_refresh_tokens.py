@@ -1,12 +1,13 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 import pytest
+from fastapi import HTTPException
+from jose import jwt
 
-from app.auth.security import create_refresh_token, hash_refresh_token, verify_refresh_token
+from app.auth.security import create_access_token, create_refresh_token, hash_refresh_token, verify_refresh_token
+from app.core.config import settings
 from app.models.refresh_token import RefreshToken
 from tests.factories import make_user
-
 
 @pytest.fixture
 def same_second(monkeypatch):
@@ -76,3 +77,13 @@ def test_refresh_token_of_a_deleted_user_is_401(client, db_session):
     response = client.post("/auth/refresh", headers=refresh_headers(raw))
 
     assert response.status_code == 401
+
+def test_access_token_exp_is_now_plus_configured_minutes():
+    before = datetime.now(timezone.utc)
+    token = create_access_token(data={"sub": "1"})
+    exp = datetime.fromtimestamp(
+        jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])["exp"], timezone.utc
+    )
+
+    expected = before + timedelta(minutes=settings.access_token_expire_minutes)
+    assert abs((exp - expected).total_seconds()) < 5
