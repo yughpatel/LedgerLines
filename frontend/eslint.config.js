@@ -17,5 +17,10 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Fetch effects set loading/error before the request starts and guard
+      // late responses with a cancelled flag; that is intended, not derived state
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

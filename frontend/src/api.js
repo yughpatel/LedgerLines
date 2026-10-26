@@ -48,7 +48,7 @@ async function request(path, { method = "GET", token, body, _isRetry = false } =
     });
   } catch (err) {
     console.error(`[api] network error on ${method} ${path}`, err);
-    throw new Error("Cannot reach the server. Is the backend running?");
+    throw new Error("Cannot reach the server. Is the backend running?", { cause: err });
   }
 
   // 401 interceptor: try one silent refresh, then retry once with the new token.

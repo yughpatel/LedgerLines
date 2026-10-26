@@ -45,7 +45,6 @@ export default function App() {
     })();
     return () => { cancelled = true; };
     // Run only on mount — subsequent token changes come through login/logout/interceptor.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleLogin(newToken) {

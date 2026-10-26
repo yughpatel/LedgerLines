@@ -59,7 +59,8 @@ export default function TransactionList({ token, userEmail, onLogout }) {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [token]);
 
   function openAdd() {
     setEditing(null);
