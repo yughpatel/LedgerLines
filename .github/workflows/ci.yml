@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ledgerlines_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: ledgerlines_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ledgerlines_user -d ledgerlines_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Dummy values for CI only. conftest.py requires a local *_test database
+      DATABASE_URL: postgresql://ledgerlines_user:ci_password@localhost:5432/ledgerlines_test
+      TEST_DATABASE_URL: postgresql://ledgerlines_user:ci_password@localhost:5432/ledgerlines_test
+      SECRET_KEY: ci-secret-key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 15
+      REFRESH_TOKEN_SECRET_KEY: ci-refresh-secret-key
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
