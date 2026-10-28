@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
-from jose import jwt
+import jwt
 
 from app.auth.security import create_access_token, create_refresh_token, hash_refresh_token, verify_refresh_token
 from app.core.config import settings

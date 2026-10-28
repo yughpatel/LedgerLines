@@ -73,7 +73,7 @@ See [ROADMAP.md](ROADMAP.md). Next up: deployment (Phase 2). Refund linking, dat
 | Database | PostgreSQL |
 | ORM | SQLAlchemy 2.0 |
 | Validation | Pydantic v2, pydantic-settings |
-| Auth | JWT (`python-jose`), password hashing (`passlib` with `bcrypt==4.0.1`), refresh tokens stored as SHA-256 digests (`hashlib`) |
+| Auth | JWT (`PyJWT`), password hashing (`pwdlib` with `bcrypt==4.3.0`), refresh tokens stored as SHA-256 digests (`hashlib`) |
 | Rate limiting | slowapi (in-memory) |
 | Migrations | Alembic |
 | Server | Uvicorn |
@@ -315,7 +315,7 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 
 ## Authentication
 
-- Passwords are hashed with bcrypt (`passlib`). Signup requires 8 to 20 characters with an uppercase letter, a digit and a special character.
+- Passwords are hashed with bcrypt (`pwdlib`). Signup requires 8 to 20 characters with an uppercase letter, a digit and a special character.
 - **Access token:** JWT signed with `SECRET_KEY`, contains `sub` (user id) and `type: "access"`, expires after `ACCESS_TOKEN_EXPIRE_MINUTES`. The frontend keeps it in `localStorage` and sends it as a Bearer token.
 - **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, a random `jti`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only its SHA-256 digest is stored, in `refresh_tokens` (unique, looked up directly by index).
 - **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure` only when `ENVIRONMENT=production`.
@@ -409,7 +409,7 @@ Not deployed yet. This is Phase 2 in [ROADMAP.md](ROADMAP.md):
 
 Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
-0. **Security and stability:** mostly done. Open: access token revocation, refresh token hash fix, evaluate `python-jose` and `passlib`.
+0. **Security and stability:** mostly done. Open: access token revocation, refresh token rotation with reuse detection, cleanup of old refresh token rows.
 1. **Category analytics and graphs:** in progress
 2. **Production deployment** (Render + Supabase + Vercel)
 3. **Expense splitting**

@@ -16,7 +16,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Fix refresh token hashing: SHA-256 digest with a unique index instead of bcrypt (which only read the first 72 bytes, so same-user tokens collided), plus a random `jti` per token
 - [ ] Refresh token rotation with reuse detection (reuse detection only means something once rotation exists)
 - [ ] Clean up expired and revoked rows in `refresh_tokens`
-- [ ] Evaluate `python-jose` and `passlib` (current FastAPI docs use PyJWT and pwdlib; deprecation unconfirmed)
+- [x] Replace `python-jose` with PyJWT and `passlib` with pwdlib (bcrypt kept, so existing hashes still verify; `bcrypt` pinned below 5.0, which raises on passwords over 72 bytes instead of truncating)
 
 ## Phase 1: Category analytics and graphs
 

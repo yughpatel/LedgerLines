@@ -3,16 +3,17 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
 from app.models.refresh_token import RefreshToken
 # Use bcrypt to resist brute-force and GPU-accelerated cracking attacks.
-# 'deprecated="auto" flag marks outdated hashes for automatic updating in case of changing algorithms.
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Same algorithm passlib used, so existing hashes still verify
+pwd_context = PasswordHash((BcryptHasher(),))
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 # Hash the plain password again and compare to the stored hash. We never decrypt (hashing only works one way).
@@ -88,7 +89,7 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
         # If "sub" field is missing, the token is malformed
         if user_id is None or token_type == "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-    except JWTError:
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
     current_user = db.query(User).filter(User.id == int(user_id)).first()
     if current_user is None:
@@ -107,7 +108,7 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             settings.refresh_token_secret_key,
             algorithms=[settings.algorithm]
         )
-    except JWTError:
+    except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
