@@ -12,7 +12,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Ownership checks that return 404 for both "not found" and "not yours"
 - [x] Reversible migrations audit (enum cleanup on downgrade, backfill before NOT NULL)
 - [x] Category delete with `ON DELETE RESTRICT` (409 while transactions still use it)
-- [ ] Access token revocation after logout (jti blacklist or `token_version` on the user)
+- [x] Access token revocation after logout: `token_version` on the user, copied into each access token as `ver` and incremented on logout. Logging out ends access tokens on every device; the others refresh silently
 - [x] Fix refresh token hashing: SHA-256 digest with a unique index instead of bcrypt (which only read the first 72 bytes, so same-user tokens collided), plus a random `jti` per token
 - [ ] Refresh token rotation with reuse detection (reuse detection only means something once rotation exists)
 - [ ] Clean up expired and revoked rows in `refresh_tokens`
@@ -48,7 +48,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Monitoring
 - [ ] Load test
 - [ ] Redis for the rate limiter when running more than one instance (currently in-memory)
-- [ ] Access token revocation (if not done in Phase 0)
+- [x] Access token revocation (done in Phase 0)
 - Deploy note: migration `b81f3d2c9a47` deletes every stored refresh token, so every user is logged out once when it runs. Run it at a quiet time, not mid-session.
 
 ## Later

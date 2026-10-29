@@ -1,5 +1,5 @@
 from app import Base
-from sqlalchemy import String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 class User(Base):
@@ -13,6 +13,10 @@ class User(Base):
     # Storing the hash, never the plain password (see security.py).
     # Named "hashed_password" so it's obvious this is never raw.
     hashed_password: Mapped[str] = mapped_column(String(255))
+
+    # Copied into every access token as "ver". Logout bumps it, so access tokens issued
+    # before then stop working instead of staying valid until they expire
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="user")
     categories: Mapped[list["Category"]] = relationship("Category", back_populates="user")
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship("RefreshToken", back_populates="user",
