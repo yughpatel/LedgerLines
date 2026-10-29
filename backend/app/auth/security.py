@@ -86,6 +86,7 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
         # Extract User ID from the payload
         user_id: str = payload.get("sub")
         token_type: str = payload.get("type")
+        token_version = payload.get("ver")
         # If "sub" field is missing, the token is malformed
         if user_id is None or token_type == "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
@@ -94,6 +95,9 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
     current_user = db.query(User).filter(User.id == int(user_id)).first()
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
+    # Issued before the user's last logout, or before versions existed (no "ver" at all)
+    if token_version != current_user.token_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
     return current_user
 
 def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple[User, RefreshToken]:

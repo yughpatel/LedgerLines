@@ -56,7 +56,7 @@ def login_user(request: Request, user: UserLogin, response: Response, db: Sessio
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
     # Generate tokens
-    access_token = create_access_token(data={"sub": str(existing_user.id)})
+    access_token = create_access_token(data={"sub": str(existing_user.id), "ver": existing_user.token_version})
     refresh_token = create_refresh_token(db=db, user_id=existing_user.id)
 
     # Determine cookie security based on environment setting
@@ -98,7 +98,7 @@ def refresh_token_route(
     user, _ = verify_refresh_token(refresh_token, db)
 
     # Generate a brand new access token for the authenticated user
-    new_access_token = create_access_token(data={"sub": str(user.id)})
+    new_access_token = create_access_token(data={"sub": str(user.id), "ver": user.token_version})
 
     return {"access_token": new_access_token, "token_type": "bearer"}
 
@@ -117,6 +117,10 @@ def logout_user(
     try:
         user, token_row = verify_refresh_token(refresh_token, db)
         token_row.revoked = True
+        # Ends every access token this user holds, on all devices. Other devices still
+        # have their refresh tokens, so they get a new access token on their next request.
+        # Incremented in SQL so two logouts at once can't both write the same number
+        db.query(User).filter(User.id == user.id).update({User.token_version: User.token_version + 1})
         db.commit()
     except HTTPException:
         # Silently pass on invalid tokens during logout

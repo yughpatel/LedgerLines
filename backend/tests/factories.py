@@ -67,4 +67,5 @@ def make_transaction(
 
 
 def auth_headers(user: User) -> dict[str, str]:
-    return {"Authorization": f"Bearer {create_access_token(data={'sub': str(user.id)})}"}
+    token = create_access_token(data={"sub": str(user.id), "ver": user.token_version})
+    return {"Authorization": f"Bearer {token}"}
