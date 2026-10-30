@@ -1,13 +1,16 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.models.user import User
+from app.models.refresh_token import RefreshToken
 from app.db.session import get_db
 from app.auth.security import (
     hash_password,
     verify_password,
     create_access_token,
     create_refresh_token,
+    find_refresh_token,
     get_current_user,
     verify_refresh_token
 )
@@ -15,6 +18,11 @@ from app.core.config import settings
 from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# How long a just-rotated refresh token still gets an access token. Covers two tabs
+# refreshing at the same moment: they share one cookie, so the slower tab sends the
+# token the faster one has just rotated
+ROTATION_GRACE = timedelta(seconds=10)
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -70,8 +78,10 @@ def login_user(request: Request, user: UserLogin, response: Response, db: Sessio
         secure=is_production,
         samesite="lax",
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
-        path="/auth"
+        path="/auth",
     )
+
+    set_refresh_cookie(response, refresh_token)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -84,6 +94,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
 def refresh_token_route(
+        response: Response,
         db: Session = Depends(get_db),
         refresh_token: str | None = Cookie(default=None)
 ):
@@ -94,14 +105,49 @@ def refresh_token_route(
             detail="Refresh token missing"
         )
 
-    # Validate the token using the correct argument position
-    user, _ = verify_refresh_token(refresh_token, db)
+    # Locked, and returned in any state; see find_refresh_token
+    token_row = find_refresh_token(refresh_token, db)
+    now = datetime.now(timezone.utc)
 
-    # Generate a brand new access token for the authenticated user
-    new_access_token = create_access_token(data={"sub": str(user.id), "ver": user.token_version})
+    if token_row.revoked:
+        # Revoked by logout, not rotation. No mass revoke: anyone holding an old copy
+        # of a logged-out cookie could otherwise log the real user out everywhere
+        if token_row.replaced_at is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found or revoked")
 
-    return {"access_token": new_access_token, "token_type": "bearer"}
+        if now - token_row.replaced_at < ROTATION_GRACE:
+            # Only while the replacement is still active. If the user logged out in
+            # those seconds, this old token must not undo the logout
+            replacement = db.get(RefreshToken, token_row.replaced_by_id) if token_row.replaced_by_id else None
+            if replacement is None or replacement.revoked:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found or revoked")
+            user = db.get(User, token_row.user_id)
+            if user is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token")
+            # No new refresh token: the cookie already holds the replacement
+            return {"access_token": create_access_token(data={"sub": str(user.id), "ver": user.token_version}), "token_type": "bearer"}
 
+        # Rotated long ago and used again, so someone else has a copy. We can't tell
+        # which side is the attacker, so every session of this user ends
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == token_row.user_id,
+            RefreshToken.revoked.is_(False),
+        ).update({RefreshToken.revoked: True})
+        db.query(User).filter(User.id == token_row.user_id).update({User.token_version: User.token_version + 1})
+        # Before the raise: get_db closes the session afterwards, and an uncommitted
+        # session is rolled back, which would quietly undo all of the above
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token reuse detected")
+
+    user = db.get(User, token_row.user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token")
+
+    # Rotation: the old row is retired and the new one saved in the same commit
+    new_refresh_token = create_refresh_token(db, user.id, replaces=token_row)
+    set_refresh_cookie(response, new_refresh_token)
+
+    return {"access_token": create_access_token(data={"sub": str(user.id), "ver": user.token_version}), "token_type": "bearer"}
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout_user(
@@ -133,3 +179,18 @@ def logout_user(
     )
 
     return {"detail": "Successfully logged out"}
+
+def set_refresh_cookie(response: Response, raw_token: str) -> None:
+    # Determine cookie security based on environment setting
+    is_production = settings.environment == "production"
+
+    # Set refresh token as an HTTP-only cookie scoped to /auth
+    response.set_cookie(
+        key="refresh_token",
+        value=raw_token,
+        httponly=True,
+        secure=is_production,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        path="/auth"
+    )

@@ -29,5 +29,18 @@ class RefreshToken(Base):
         nullable=False
     )
     revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
+    # Set when /auth/refresh swaps this token for a new one. Null on a revoked
+    # token means logout revoked it, not rotation
+    replaced_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+    # The token that replaced this one. SET NULL so cleanup can delete old rows
+    # that an older row still points to
+    replaced_by_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("refresh_tokens.id", ondelete="SET NULL"),
+        nullable=True
+    )
     user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
+

@@ -45,15 +45,21 @@ def hash_refresh_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
-def create_refresh_token(db: Session, user_id: int) -> str:
+def create_refresh_token(db: Session, user_id: int, replaces: RefreshToken | None = None) -> str:
     """
     Generates a raw JWT refresh token, hashes it, saves the hash
     to the database, and returns the unhashed raw token string.
+
+    With `replaces`, this is a rotation: the new token keeps the old one's expiry,
+    so a session still ends a fixed time after login, and the old row is retired
+    in the same commit, so there is never a moment with both or neither active.
     """
-    # Build the JWT payload
     # Note: Explicitly using UTC timezone ensures consistency across servers
     now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(days=settings.refresh_token_expire_days)
+    if replaces is not None:
+        expires_at = replaces.expires_at
+    else:
+        expires_at = now + timedelta(days=settings.refresh_token_expire_days)
     payload = {
         "sub": str(user_id),
         "exp": expires_at,
@@ -63,20 +69,25 @@ def create_refresh_token(db: Session, user_id: int) -> str:
         # uuid4 comes from the OS's secure random source
         "jti": uuid.uuid4().hex,
     }
-    # Encode into a raw JWT string
     raw_refresh_token = jwt.encode(payload, settings.refresh_token_secret_key, algorithm=settings.algorithm)
-    # Hash that raw string
-    token_hash = hash_refresh_token(raw_refresh_token)
-    # Save a new row to the refresh_tokens table
     db_refresh_token = RefreshToken(
         user_id=user_id,
-        token_hash=token_hash,
+        token_hash=hash_refresh_token(raw_refresh_token),
         expires_at=expires_at
     )
     db.add(db_refresh_token)
+
+    if replaces is not None:
+        # flush sends the INSERT now, without committing, so the new row has an id to point at
+        db.flush()
+        replaces.revoked = True
+        replaces.replaced_at = now
+        replaces.replaced_by_id = db_refresh_token.id
+
     db.commit()
-    # Return the raw, unhashed JWT string
     return raw_refresh_token
+
+
 def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(get_db)):
     """Extract and validate JWT token from the Authorization header.
     Returns the user ID if token is valid. Raises 401 if token is invalid, missing or expired."""
@@ -100,10 +111,13 @@ def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(g
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
     return current_user
 
-def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple[User, RefreshToken]:
+def find_refresh_token(raw_token: str, db: Session) -> RefreshToken:
     """
-    Decodes the raw refresh token, validates its integrity,
-    verifies it against active database hashes, and returns the User and RefreshToken record.
+    Decodes the raw refresh token and returns its database row, locked, in any state:
+    active, rotated or revoked. The caller decides what that state means.
+
+    Raises 401 only when the token can't be ours at all: bad signature, expired,
+    wrong type, or no matching row.
     """
     # Decode and validate the JWT signature and basic constraints
     try:
@@ -129,15 +143,17 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Invalid token payload claims",
         )
 
-    # One indexed lookup on the digest. Comparing in SQL is fine: both sides are hashes
-    # of a long random token, so there is no timing leak worth protecting against
+    # No revoked filter, on purpose. A request that waits on this lock re-checks its
+    # WHERE clause against the row as the other request left it, so "revoked is false"
+    # here would make a rotated token look like an unknown one and skip the grace path.
+    # The lock makes two refreshes of the same token take turns instead of both rotating it
     matched_token_record = (
         db.query(RefreshToken)
         .filter(
             RefreshToken.token_hash == hash_refresh_token(raw_token),
             RefreshToken.user_id == int(user_id),
-            RefreshToken.revoked.is_(False),
         )
+        .with_for_update()
         .first()
     )
 
@@ -147,24 +163,36 @@ def verify_refresh_token(raw_token: str, db: Session = Depends(get_db)) -> tuple
             detail="Refresh token not found or revoked",
         )
 
-    # DB-Level Expiration Check Analysis
     # The JWT 'exp' claim is validated during jwt.decode() automatically.
-    # Checking row.expires_at against datetime.now(timezone.utc) catches:
-    # - Administrative updates where an admin manually shortens validity in the DB.
-    # - Changes to token lifespan settings that are retroactively enforced via DB updates.
+    # Checking row.expires_at as well lets an admin shorten a session in the database
     if matched_token_record.expires_at < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has expired in database records",
         )
 
+    return matched_token_record
+
+
+def verify_refresh_token(raw_token: str, db: Session) -> tuple[User, RefreshToken]:
+    """
+    Returns the User and RefreshToken row for an active refresh token, or raises 401.
+    Rotated and revoked tokens are both rejected here; only /auth/refresh needs to tell them apart.
+    """
+    matched_token_record = find_refresh_token(raw_token, db)
+
+    if matched_token_record.revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token not found or revoked",
+        )
+
     # Fetch and return the authenticated user object
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.query(User).filter(User.id == matched_token_record.user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
         )
 
-    # Return both the User and the matched DB record row
     return user, matched_token_record

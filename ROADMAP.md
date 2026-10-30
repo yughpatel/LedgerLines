@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-24
+Last updated: 2026-10-29
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
