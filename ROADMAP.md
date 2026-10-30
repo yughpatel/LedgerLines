@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-29
+Last updated: 2026-10-30
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
@@ -14,7 +14,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Category delete with `ON DELETE RESTRICT` (409 while transactions still use it)
 - [x] Access token revocation after logout: `token_version` on the user, copied into each access token as `ver` and incremented on logout. Logging out ends access tokens on every device; the others refresh silently
 - [x] Fix refresh token hashing: SHA-256 digest with a unique index instead of bcrypt (which only read the first 72 bytes, so same-user tokens collided), plus a random `jti` per token
-- [ ] Refresh token rotation with reuse detection (reuse detection only means something once rotation exists)
+- [x] Refresh token rotation with reuse detection: original expiry kept, row locked during the lookup, 10-second grace for tabs sharing a cookie (only while the replacement is active), reuse revokes every session and bumps `token_version`, a logged-out token gets a plain 401
 - [ ] Clean up expired and revoked rows in `refresh_tokens`
 - [x] Replace `python-jose` with PyJWT and `passlib` with pwdlib (bcrypt kept, so existing hashes still verify; `bcrypt` pinned below 5.0, which raises on passwords over 72 bytes instead of truncating)
 

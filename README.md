@@ -277,7 +277,7 @@ Protected endpoints need `Authorization: Bearer <access token>`. Full schemas ar
 | POST | `/auth/signup` | Create an account (201). 409 if the email exists. Limit 2/minute. |
 | POST | `/auth/login` | Returns an access token and sets the `refresh_token` cookie. Limit 5/minute. |
 | GET | `/auth/me` | Current user (`id`, `email`) |
-| POST | `/auth/refresh` | Uses the refresh cookie, returns a new access token |
+| POST | `/auth/refresh` | Rotates the refresh cookie, returns a new access token |
 | POST | `/auth/logout` | Revokes the refresh token, ends the user's access tokens and clears the cookie |
 
 ### Transactions
@@ -320,7 +320,8 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 - **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, a random `jti`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only its SHA-256 digest is stored, in `refresh_tokens` (unique, looked up directly by index).
 - **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure` only when `ENVIRONMENT=production`.
 - **Refresh flow:** on a 401, the frontend calls `POST /auth/refresh` once (shared between parallel requests) and retries the request with the new access token. If refresh fails, the user is logged out.
-- **Rotation:** not implemented. `/auth/refresh` returns a new access token and the same refresh token stays valid until it expires or is revoked.
+- **Rotation:** each `/auth/refresh` revokes the presented token and sets a new one in the cookie, keeping the original expiry, so a session ends `REFRESH_TOKEN_EXPIRE_DAYS` after login. The row is locked while it's read, so two refreshes of the same token take turns.
+- **Reuse detection:** a rotated token presented again more than 10 seconds later means someone else has a copy, so every refresh token of that user is revoked and `token_version` is incremented. Within 10 seconds (two tabs sharing one cookie), it gets an access token and no new cookie, but only while its replacement is still active, so it can't undo a logout. A token revoked by logout just gets a 401.
 - **Logout:** marks the stored refresh token as revoked, increments the user's `token_version` and clears the cookie. Every request checks `ver` against `token_version`, so access tokens issued before the logout get a 401 on all devices. Other devices still hold valid refresh tokens, so they get a new access token silently.
 
 ---
@@ -351,7 +352,7 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 - Unique on `(user_id, lower(name))` with `NULLS NOT DISTINCT`
 
 ### RefreshToken
-- `id`, `user_id` (`ON DELETE CASCADE`), `token_hash`, `expires_at`, `created_at`, `revoked`
+- `id`, `user_id` (`ON DELETE CASCADE`), `token_hash`, `expires_at`, `created_at`, `revoked`, `replaced_at` and `replaced_by_id` (set on rotation; `replaced_by_id` points at the new row, `ON DELETE SET NULL`)
 
 Planned for expense splitting: `Friend`, `Split`, `SplitParticipant` (see [ROADMAP.md](ROADMAP.md)).
 
@@ -409,7 +410,7 @@ Not deployed yet. This is Phase 2 in [ROADMAP.md](ROADMAP.md):
 
 Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
-0. **Security and stability:** mostly done. Open: refresh token rotation with reuse detection, cleanup of old refresh token rows.
+0. **Security and stability:** mostly done. Open: cleanup of old refresh token rows.
 1. **Category analytics and graphs:** in progress
 2. **Production deployment** (Render + Supabase + Vercel)
 3. **Expense splitting**
@@ -422,7 +423,7 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - No frontend tests, and no backend tests yet for transaction CRUD or category create/delete
 - Not deployed; runs locally only
 - Refunds aren't linked to a purchase (accepted on purpose for v1), so a refund larger than the purchase, or under a different category, isn't caught and can make spending negative
-- Refresh tokens are not rotated, and old rows in `refresh_tokens` are never cleaned up
+- Old rows in `refresh_tokens` are never cleaned up, and rotation adds one per refresh
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - CORS allows only `http://localhost:3000` (hard-coded)
