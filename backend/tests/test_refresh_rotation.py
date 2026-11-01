@@ -1,7 +1,7 @@
 import threading
 import time
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException, Response
@@ -56,6 +56,20 @@ def test_rotated_token_keeps_the_original_expiry(client, db_session):
     second = rotate(client, first)
 
     assert row_for(db_session, second).expires_at == row_for(db_session, first).expires_at
+
+
+def test_rotated_cookie_expires_with_its_token(client, db_session):
+    user = make_user(db_session)
+    first = create_refresh_token(db_session, user.id)
+    # As if the session started six days ago: one day left
+    row_for(db_session, first).expires_at = datetime.now(timezone.utc) + timedelta(days=1)
+    db_session.flush()
+
+    response = refresh(client, first)
+
+    cookie = response.headers["set-cookie"]
+    max_age = int(cookie.split("Max-Age=")[1].split(";")[0])
+    assert abs(max_age - 24 * 60 * 60) < 5
 
 
 def test_token_revoked_by_logout_is_401_without_ending_other_sessions(client, db_session):

@@ -131,7 +131,8 @@ def refresh_token_route(
 
     # Rotation: the old row is retired and the new one saved in the same commit
     new_refresh_token = create_refresh_token(db, user.id, replaces=token_row)
-    set_refresh_cookie(response, new_refresh_token)
+    # The new token kept token_row's expiry, so the cookie does too
+    set_refresh_cookie(response, new_refresh_token, expires_at=token_row.expires_at)
 
     return {"access_token": create_access_token(data={"sub": str(user.id), "ver": user.token_version}), "token_type": "bearer"}
 
@@ -166,9 +167,17 @@ def logout_user(
 
     return {"detail": "Successfully logged out"}
 
-def set_refresh_cookie(response: Response, raw_token: str) -> None:
+
+def set_refresh_cookie(response: Response, raw_token: str, expires_at: datetime | None = None) -> None:
     # Determine cookie security based on environment setting
     is_production = settings.environment == "production"
+
+    # The cookie should die with the token inside it. A rotated token keeps the
+    # original expiry, so after a refresh that's less than the full lifetime
+    if expires_at is None:
+        max_age = settings.refresh_token_expire_days * 24 * 60 * 60
+    else:
+        max_age = int((expires_at - datetime.now(timezone.utc)).total_seconds())
 
     # Set refresh token as an HTTP-only cookie scoped to /auth
     response.set_cookie(
@@ -177,6 +186,6 @@ def set_refresh_cookie(response: Response, raw_token: str) -> None:
         httponly=True,
         secure=is_production,
         samesite="lax",
-        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        max_age=max_age,
         path="/auth"
     )
