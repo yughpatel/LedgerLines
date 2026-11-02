@@ -423,7 +423,7 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - No frontend tests, and no backend tests yet for transaction CRUD or category create/delete
 - Not deployed; runs locally only
 - Refunds aren't linked to a purchase (accepted on purpose for v1), so a refund larger than the purchase, or under a different category, isn't caught and can make spending negative
-- Old rows in `refresh_tokens` are never cleaned up, and rotation adds one per refresh
+- Expired `refresh_tokens` rows are deleted only when that user logs in again
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - CORS allows only `http://localhost:3000` (hard-coded)

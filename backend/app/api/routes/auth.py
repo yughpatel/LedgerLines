@@ -63,6 +63,14 @@ def login_user(request: Request, user: UserLogin, response: Response, db: Sessio
     if not existing_user or not verify_password(user.password, existing_user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
+    # Expired rows can never be used again (the JWT check rejects them first). A
+    # rotation chain shares one expiry, so whole chains go together. Revoked rows that
+    # haven't expired stay: reuse detection needs them. Committed with the new token below
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == existing_user.id,
+        RefreshToken.expires_at < datetime.now(timezone.utc),
+    ).delete()
+    
     # Generate tokens
     access_token = create_access_token(data={"sub": str(existing_user.id), "ver": existing_user.token_version})
     refresh_token = create_refresh_token(db=db, user_id=existing_user.id)
