@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-30
+Last updated: 2026-11-03
 
 Deployment comes before splitting because a live, tested app is a stronger portfolio piece than a bigger unfinished one. Phase 1 closes before Phase 2 starts.
 
@@ -15,7 +15,8 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [x] Access token revocation after logout: `token_version` on the user, copied into each access token as `ver` and incremented on logout. Logging out ends access tokens on every device; the others refresh silently
 - [x] Fix refresh token hashing: SHA-256 digest with a unique index instead of bcrypt (which only read the first 72 bytes, so same-user tokens collided), plus a random `jti` per token
 - [x] Refresh token rotation with reuse detection: original expiry kept, row locked during the lookup, 10-second grace for tabs sharing a cookie (only while the replacement is active), reuse revokes every session and bumps `token_version`, a logged-out token gets a plain 401
-- [x] Delete a user's expired refresh_tokens rows at login (revoked rows stay until they expire; reuse detection needs them)- [x] Replace `python-jose` with PyJWT and `passlib` with pwdlib (bcrypt kept, so existing hashes still verify; `bcrypt` pinned below 5.0, which raises on passwords over 72 bytes instead of truncating)
+- [x] Delete a user's expired refresh_tokens rows at login (revoked rows stay until they expire; reuse detection needs them)
+- [x] Replace `python-jose` with PyJWT and `passlib` with pwdlib (bcrypt kept, so existing hashes still verify; `bcrypt` pinned below 5.0, which raises on passwords over 72 bytes instead of truncating)
 
 ## Phase 1: Category analytics and graphs
 
@@ -41,15 +42,16 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 - [ ] Refresh cookie that works between the frontend and the API (currently `samesite=lax`; needs same-site domains or a different design)
 - [ ] Rate limiter that sees the real client IP behind the proxy (currently `get_remote_address`)
 - [ ] Per-environment settings
-- [ ] CI
+- [x] CI (GitHub Actions: backend pytest against a Postgres service, frontend lint and build)
 - [x] `.env.example`
 - [ ] Secrets in each platform's env settings
 - [ ] Monitoring
 - [ ] Load test
 - [ ] Redis for the rate limiter when running more than one instance (currently in-memory)
 - [x] Access token revocation (done in Phase 0)
-- - [ ] Scheduled cleanup of expired refresh_tokens rows for all users (same delete without the user filter)
+- [ ] Scheduled cleanup of expired refresh_tokens rows for all users (same delete without the user filter)
 - Deploy note: migration `b81f3d2c9a47` deletes every stored refresh token, so every user is logged out once when it runs. Run it at a quiet time, not mid-session.
+
 ## Later
 
 Deferred because nothing calls them yet. Pick them up when a real need appears.

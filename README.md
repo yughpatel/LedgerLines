@@ -410,8 +410,8 @@ Not deployed yet. This is Phase 2 in [ROADMAP.md](ROADMAP.md):
 
 Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
-0. **Security and stability:** mostly done. Open: cleanup of old refresh token rows.
-1. **Category analytics and graphs:** in progress
+0. **Security and stability:** done.
+1. **Category analytics and graphs:** done
 2. **Production deployment** (Render + Supabase + Vercel)
 3. **Expense splitting**
 4. **AI analysis** (stretch, deferred)
