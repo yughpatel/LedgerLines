@@ -1,10 +1,170 @@
 @import "tailwindcss";
 
+/*
+  LedgerLines design system: Roznamcha, neem green accent.
+  Mockup: design/mockups/roznamcha.html (#overview-dark-neem)
+  Build plan: design/build-plan.md
+
+  Dark first. The values in @theme are the dark theme; light mode redefines the
+  same variables further down. Utilities read the variables (bg-surface is
+  background-color: var(--color-surface)), so every utility follows the theme
+  without dark: variants. Prefer these tokens over dark: in components.
+
+  Theme choice: data-theme="light" | "dark" on <html>; no attribute follows the OS.
+
+  Contrast (WCAG AA), both themes: every text pair is 4.5:1 or more (lowest 5.48:1),
+  input borders, chart marks and the focus ring are 3:1 or more.
+
+  `static` keeps every variable in the output even before a utility uses it, so
+  the light overrides and hand-written CSS can rely on them.
+*/
+@theme static {
+  /* Surfaces */
+  --color-canvas: #10131A;        /* page background, the night desk */
+  --color-surface: #181C26;       /* cards, sheets, sidebar */
+  --color-surface-2: #212634;     /* hover, selected row, segmented control track */
+  --color-topbar: #10131A;
+  --color-scrim: rgb(0 0 0 / 0.6);
+
+  /* Text and lines */
+  --color-ink: #E8EAF0;           /* body text, expense amounts */
+  --color-muted: #9AA2B4;         /* secondary text */
+  --color-line: #262C3A;          /* decorative dividers (no contrast need) */
+  --color-field: #677088;         /* input and chip borders, 3:1 */
+  --color-margin: #A9505D;        /* the ledger's red margin rule, decorative */
+  --color-focus: #86B6F2;         /* focus ring */
+
+  /* Brand: neem green */
+  --color-brand: #56D3B0;         /* primary buttons, active indicators */
+  --color-brand-hover: #74DEC0;
+  --color-on-brand: #05231B;      /* text on brand */
+  --color-brand-soft: #173A31;    /* selected chip, nav pill */
+  --color-brand-ink: #74DEC0;     /* brand-coloured text and links */
+
+  /* Money. Never shown by colour alone: always a + or − sign, and a Refund tag */
+  --color-income: #9CCF6E;        /* leaf green, a different hue from the brand */
+  --color-income-soft: #22301A;
+  --color-expense: #E8EAF0;       /* expenses stay in ink */
+  --color-expense-soft: #262B38;
+  --color-refund: #86B6F2;
+  --color-refund-soft: #1C2A40;
+
+  /* Charts */
+  --color-chart-income: #9CCF6E;  /* hatched bars */
+  --color-chart-income-2: #22301A;/* hatch gaps */
+  --color-chart-spend: #EE8E9A;   /* solid bars, madder rose */
+  --color-chart-net: #56D3B0;
+
+  /* Danger */
+  --color-danger: #F38677;        /* delete button fill */
+  --color-on-danger: #2A0906;
+  --color-danger-text: #F59C93;   /* errors */
+  --color-danger-soft: #3A1D1B;
+
+  /* Type: serif for headings, day names and totals; sans for the interface;
+     mono for figures in lists and charts. Loading the faces is step 1 of the plan;
+     until then the fallbacks render. */
+  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --text-page: 1.75rem;           /* page title, phone */
+  --text-page-lg: 2.125rem;       /* page title, 768px and up */
+  --text-card: 1.1875rem;         /* card titles */
+  --text-total: 1.25rem;          /* earned / spent, phone */
+  --text-total-lg: 1.75rem;
+
+  /* Shape */
+  --radius-card: 0.5rem;
+  --radius-control: 0.5rem;
+  --radius-chip: 0.5rem;
+  --radius-glyph: 0.375rem;
+  --radius-sheet: 0.875rem;
+  --radius-fab: 0.875rem;
+  --shadow-chip: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 16px 40px rgb(0 0 0 / 0.55);
+  --shadow-fab: 0 6px 18px rgb(86 211 176 / 0.22);
+
+  /* Motion. Things move only in answer to the user, and never under reduced motion */
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);    /* most movement */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);   /* sheets and toasts rising */
+  --animate-fade-up: fade-up 0.4s var(--ease-soft) both;        /* page and list entry */
+  --animate-fade-in: fade-in 0.24s ease both;                   /* scrims */
+  --animate-fade-out: fade-out 0.2s ease both;
+  --animate-sheet-up: sheet-up 0.46s var(--ease-sheet) both;    /* phone sheet */
+  --animate-sheet-down: sheet-down 0.22s ease-in both;
+  --animate-pop-in: pop-in 0.26s var(--ease-soft) both;         /* dialogs, desktop sheet */
+  --animate-pop-out: pop-out 0.18s ease-in both;
+  --animate-menu-in: menu-in 0.18s var(--ease-soft) both;       /* menus, month picker */
+  --animate-menu-out: menu-out 0.12s ease-in both;
+  --animate-flash: flash 2s ease-out;                           /* a row just added or saved */
+  --animate-shake: shake 0.36s ease;                            /* a field that failed */
+  --animate-draw: draw 1.1s 0.15s var(--ease-soft) forwards;    /* sparklines, pathLength="1" */
+
+  @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes fade-out { to { opacity: 0; } }
+  @keyframes sheet-up { from { transform: translateY(100%); } }
+  @keyframes sheet-down { to { transform: translateY(100%); } }
+  @keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
+  @keyframes pop-out { to { opacity: 0; transform: translateY(6px) scale(0.98); } }
+  @keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
+  @keyframes menu-out { to { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+  @keyframes flash { 0%, 35% { background-color: var(--color-brand-soft); } 100% { background-color: transparent; } }
+  @keyframes shake { 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+  @keyframes draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
+}
+
+/* Light theme: ruled paper. Same variables, light values */
+@layer theme {
+  :root { color-scheme: dark; }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --color-canvas: #F7F7F4; --color-surface: #FFFFFF; --color-surface-2: #F1F2EF; --color-topbar: #FFFFFF;
+      --color-scrim: rgb(28 34 48 / 0.45);
+      --color-ink: #1C2230; --color-muted: #596070; --color-line: #DCE2EC; --color-field: #7E8799;
+      --color-margin: #C8505F; --color-focus: #2A5699;
+      --color-brand: #0B6A56; --color-brand-hover: #085A49; --color-on-brand: #FFFFFF; --color-brand-soft: #D9F0E8; --color-brand-ink: #0B6A56;
+      --color-income: #3D7417; --color-income-soft: #E8F2DD; --color-expense: #1C2230; --color-expense-soft: #ECEEF2;
+      --color-refund: #2A5699; --color-refund-soft: #E6EEF9;
+      --color-chart-income: #3D7417; --color-chart-income-2: #D9EBC6; --color-chart-spend: #8E1F2F; --color-chart-net: #0B6A56;
+      --color-danger: #A3221B; --color-on-danger: #FFFFFF; --color-danger-text: #A3221B; --color-danger-soft: #FBEAE8;
+      --shadow-chip: 0 1px 2px rgb(28 34 48 / 0.12); --shadow-pop: 0 12px 32px rgb(28 34 48 / 0.18); --shadow-fab: 0 6px 18px rgb(11 106 86 / 0.3);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --color-canvas: #F7F7F4; --color-surface: #FFFFFF; --color-surface-2: #F1F2EF; --color-topbar: #FFFFFF;
+    --color-scrim: rgb(28 34 48 / 0.45);
+    --color-ink: #1C2230; --color-muted: #596070; --color-line: #DCE2EC; --color-field: #7E8799;
+    --color-margin: #C8505F; --color-focus: #2A5699;
+    --color-brand: #0B6A56; --color-brand-hover: #085A49; --color-on-brand: #FFFFFF; --color-brand-soft: #D9F0E8; --color-brand-ink: #0B6A56;
+    --color-income: #3D7417; --color-income-soft: #E8F2DD; --color-expense: #1C2230; --color-expense-soft: #ECEEF2;
+    --color-refund: #2A5699; --color-refund-soft: #E6EEF9;
+    --color-chart-income: #3D7417; --color-chart-income-2: #D9EBC6; --color-chart-spend: #8E1F2F; --color-chart-net: #0B6A56;
+    --color-danger: #A3221B; --color-on-danger: #FFFFFF; --color-danger-text: #A3221B; --color-danger-soft: #FBEAE8;
+    --shadow-chip: 0 1px 2px rgb(28 34 48 / 0.12); --shadow-pop: 0 12px 32px rgb(28 34 48 / 0.18); --shadow-fab: 0 6px 18px rgb(11 106 86 / 0.3);
+    color-scheme: light;
+  }
+}
+
+@layer base {
+  :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
 }
 
+/* The current light page colours stay until step 2 of the build plan (the app shell)
+   swaps them for: background var(--color-canvas); color var(--color-ink);
+   font-family var(--font-sans). Switching now would put dark-theme text on the
+   white cards of components that haven't moved to tokens yet. */
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: #1f2937;
