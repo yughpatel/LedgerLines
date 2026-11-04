@@ -13,15 +13,30 @@ from app.schemas.analytics import TrendBucket
 CENTS = Decimal("0.01")
 
 
+def _in_range(start: datetime | None, end: datetime | None) -> list:
+    """Half-open [start, end) filter on transaction_date, or no filter for all-time."""
+    if start is None and end is None:
+        return []
+    if start is None or end is None:
+        raise ValueError("Pass both start and end, or neither.")
+    return [Transaction.transaction_date >= start, Transaction.transaction_date < end]
+
+
 def get_spending_by_category(
     current_user_id: int,
     session: Session,
+    start: datetime | None = None,
+    end: datetime | None = None,
 ) -> Sequence[Row]:
     """
     Per-category spending for the given user (DEBIT minus REFUND), biggest first.
+    All-time, or only transactions in [start, end) when both are given.
 
     Inner-joined on Category, so a category with no DEBIT or REFUND rows simply
-    produces no group. Categories that net to zero or below are dropped too.
+    produces no group. All-time, categories that net to zero or below are dropped.
+    For one month only zero is dropped: a purchase in September refunded in October
+    makes October's total for that category negative, and that's real. Keeping it
+    means the categories add up to the month's total_spent in the summary.
     """
     # Refund amounts are stored positive like debits, so the sign is applied here
     total = func.sum(
@@ -41,13 +56,15 @@ def get_spending_by_category(
         .where(
             Transaction.user_id == current_user_id,
             Transaction.type.in_([TransactionType.DEBIT, TransactionType.REFUND]),
+            *_in_range(start, end),
         )
         # Postgres requires every non-aggregated column in the SELECT to appear here.
         # Grouping by id alone would make Category.name illegal to select.
         .group_by(Category.id, Category.name)
-        # A fully refunded category has nothing to chart. A negative total means more
-        # was refunded than spent, which is a data entry error this also hides
-        .having(total > 0)
+        # A fully refunded category has nothing to chart. All-time, a negative total
+        # means more was refunded than spent, which is a data entry error this also
+        # hides; within one month it can be a refund for an earlier month's purchase
+        .having(total > 0 if start is None else total != 0)
         # Tie-breakers keep equal totals in a stable order so the chart doesn't reshuffle
         .order_by(desc("total"), Category.name, Category.id)
     )
@@ -57,9 +74,12 @@ def get_spending_by_category(
 def get_income_by_category(
     current_user_id: int,
     session: Session,
+    start: datetime | None = None,
+    end: datetime | None = None,
 ) -> Sequence[Row]:
     """
     Per-category CREDIT totals for the given user, biggest first.
+    All-time, or only transactions in [start, end) when both are given.
 
     Mirror of get_spending_by_category with the type flipped - same inner join,
     so categories with no CREDIT rows are omitted.
@@ -75,6 +95,7 @@ def get_income_by_category(
         .where(
             Transaction.user_id == current_user_id,
             Transaction.type == TransactionType.CREDIT,
+            *_in_range(start, end),
         )
         .group_by(Category.id, Category.name)
         .order_by(desc("total"), Category.name, Category.id)
