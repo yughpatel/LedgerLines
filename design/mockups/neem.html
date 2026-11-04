@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerLines · Neem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Direction B: Neem. Fresh, friendly, phone-native. Neem-leaf green on a
+   pale mint canvas, soft rounded cards, one bold net card. Light first. */
+:root {
+  --color-canvas: #F1F6F4;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #E8F0ED;
+  --color-topbar: #F1F6F4;
+  --color-ink: #0F2420;
+  --color-muted: #4A605A;
+  --color-line: #DCE8E3;
+  --color-field: #6F918A;
+  --color-brand: #0B6A56;
+  --color-brand-hover: #085A49;
+  --color-on-brand: #FFFFFF;
+  --color-on-brand-muted: #CDEBE2;
+  --color-brand-soft: #D9F0E8;
+  --color-brand-ink: #0B6A56;
+  --color-focus: #6B3FB8;
+  --color-income: #0A7647;
+  --color-income-soft: #DCF3E6;
+  --color-expense: #0F2420;
+  --color-expense-soft: #EEF2F0;
+  --color-refund: #6B3FB8;
+  --color-refund-soft: #EEE7FA;
+  --color-chart-income: #0A7647;
+  --color-chart-income-2: #CDEFDB;
+  --color-chart-spend: #C2502F;
+  --color-chart-net: #0B6A56;
+  --color-danger: #B42B2B;
+  --color-on-danger: #FFFFFF;
+  --color-danger-text: #B42B2B;
+  --color-danger-soft: #FCE9E7;
+  --color-scrim: rgb(15 36 32 / .45);
+
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-weight-display: 800;
+
+  --radius-card: 20px;
+  --radius-control: 12px;
+  --radius-chip: 999px;
+  --radius-glyph: 12px;
+  --radius-fab: 18px;
+  --radius-sheet: 24px;
+  --card-border: 0;
+  --shadow-card: 0 1px 2px rgb(15 36 32 / .05), 0 6px 20px rgb(15 36 32 / .06);
+  --shadow-chip: 0 1px 3px rgb(15 36 32 / .14);
+  --shadow-pop: 0 16px 40px rgb(15 36 32 / .18);
+  --shadow-fab: 0 8px 20px rgb(11 106 86 / .4);
+  --text-page: 26px;
+  --text-page-lg: 30px;
+  --text-card: 17px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --color-canvas: #0D1613; --color-surface: #15211D; --color-surface-2: #1D2C27; --color-topbar: #0D1613;
+  --color-ink: #E4F1EC; --color-muted: #9CB2AA; --color-line: #23342E; --color-field: #5F8277;
+  --color-brand: #56D3B0; --color-brand-hover: #74DEC0; --color-on-brand: #05231B; --color-on-brand-muted: #0F3D31; --color-brand-soft: #173A31; --color-brand-ink: #74DEC0;
+  --color-focus: #BBA0F2;
+  --color-income: #62D89E; --color-income-soft: #163326; --color-expense: #E4F1EC; --color-expense-soft: #22302B;
+  --color-refund: #BBA0F2; --color-refund-soft: #2A2340;
+  --color-chart-income: #62D89E; --color-chart-income-2: #163326; --color-chart-spend: #F0906F; --color-chart-net: #56D3B0;
+  --color-danger: #F2877D; --color-on-danger: #2A0906; --color-danger-text: #F59C93; --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+  --shadow-card: none; --shadow-pop: 0 16px 40px rgb(0 0 0 / .5); --shadow-fab: 0 8px 20px rgb(0 0 0 / .5);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --color-canvas: #0D1613; --color-surface: #15211D; --color-surface-2: #1D2C27; --color-topbar: #0D1613;
+  --color-ink: #E4F1EC; --color-muted: #9CB2AA; --color-line: #23342E; --color-field: #5F8277;
+  --color-brand: #56D3B0; --color-brand-hover: #74DEC0; --color-on-brand: #05231B; --color-on-brand-muted: #0F3D31; --color-brand-soft: #173A31; --color-brand-ink: #74DEC0;
+  --color-focus: #BBA0F2;
+  --color-income: #62D89E; --color-income-soft: #163326; --color-expense: #E4F1EC; --color-expense-soft: #22302B;
+  --color-refund: #BBA0F2; --color-refund-soft: #2A2340;
+  --color-chart-income: #62D89E; --color-chart-income-2: #163326; --color-chart-spend: #F0906F; --color-chart-net: #56D3B0;
+  --color-danger: #F2877D; --color-on-danger: #2A0906; --color-danger-text: #F59C93; --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+  --shadow-card: none; --shadow-pop: 0 16px 40px rgb(0 0 0 / .5); --shadow-fab: 0 8px 20px rgb(0 0 0 / .5);
+  color-scheme: dark;
+}
+</style>
+<link rel="stylesheet" href="shared/app.css">
+<style>
+/* Neem specifics: pill tabs, tiles for the summary, a filled net card, raised add button */
+.topbar { border-bottom: 0; }
+.tabs { background: var(--color-surface); padding: 4px; border-radius: 999px; box-shadow: var(--shadow-card); }
+.tab { border-radius: 999px; min-height: 40px; }
+.tab .ind { background: var(--color-brand-soft); }
+.tab[aria-current="page"] { color: var(--color-brand-ink); }
+.btn { border-radius: 999px; }
+.btn-primary { box-shadow: 0 4px 12px rgb(11 106 86 / .25); }
+.page-head h1 { letter-spacing: -.02em; }
+.month-label { border-radius: 999px; }
+.monthbar .icon-btn { border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-card); }
+.monthbar .icon-btn:disabled { box-shadow: none; background: transparent; }
+
+.summary-card { background: transparent; box-shadow: none; padding: 0; }
+.stat { background: var(--color-surface); border-radius: var(--radius-card); padding: 16px; box-shadow: var(--shadow-card); }
+.stat-net { background: transparent; box-shadow: none; padding: 4px 4px 8px; }
+.stat-net .stat-value { font-size: 40px; color: var(--color-brand-ink); }
+.stat-net .stat-value.neg { color: var(--color-danger-text); }
+.stat-value { font-weight: 800; letter-spacing: -.02em; }
+@media (min-width: 768px) {
+  .summary { gap: 16px; grid-template-columns: 1.3fr 1fr 1fr; }
+  .stat-net { order: -1; padding: 8px 4px; }
+  .stat { padding: 20px; }
+}
+
+.day-head { padding-left: 8px; }
+.glyph { width: 42px; height: 42px; }
+.tx-main { min-height: 68px; }
+.cat-track { height: 10px; }
+.fab { margin-top: -26px; border: 4px solid var(--color-canvas); width: 62px; height: 62px; }
+.bottomnav { border-top: 0; box-shadow: 0 -4px 20px rgb(15 36 32 / .06); background: var(--color-surface); }
+.seg { border-radius: 999px; }
+.seg button { border-radius: 999px; }
+.typeseg { border-radius: 16px; }
+.typeseg span { border-radius: 12px; }
+
+/* Login */
+.auth-side { background: var(--color-brand); color: var(--color-on-brand); align-items: center; justify-content: center; padding: 48px; position: relative; overflow: hidden; }
+.leaf-art { position: relative; width: 100%; max-width: 440px; display: grid; gap: 14px; }
+.leaf-art h2 { font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--color-on-brand); }
+.leaf-art p { color: var(--color-on-brand-muted); font-size: 17px; max-width: 30ch; }
+.mini { background: var(--color-surface); color: var(--color-ink); border-radius: 18px; padding: 14px 16px; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; box-shadow: 0 10px 30px rgb(0 0 0 / .15); }
+.mini b { font-variant-numeric: tabular-nums; }
+.mini small { display: block; color: var(--color-muted); font-size: 13px; }
+.mini:nth-of-type(2) { margin-left: 32px; }
+.mini:nth-of-type(3) { margin-left: 64px; }
+.blob { position: absolute; width: 420px; height: 420px; border-radius: 50%; background: rgb(255 255 255 / .06); right: -140px; top: -120px; }
+</style>
+</head>
+<body class="dir-neem">
+<div id="app"></div>
+<script>
+window.LL_DIR = {
+  id: "neem",
+  nav: "tabs",
+  mark: '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--color-brand)"/><path d="M8 21c3-1 5-5 8-6s5 1 8-5" fill="none" stroke="var(--color-on-brand)" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="10" r="2.4" fill="var(--color-on-brand)"/></svg>',
+  loginArt: () => `<span class="blob"></span><div class="leaf-art">
+    <h2>Know where your money goes.</h2>
+    <p>Log what you earn and spend. See your month at a glance.</p>
+    <div class="mini"><span class="glyph CREDIT"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 7 7 17"/><path d="M15 17H7V9"/></svg></span><span>Salary<small>Today, 9:05 am</small></span><b style="color:var(--color-income)">+₹85,000.00</b></div>
+    <div class="mini"><span class="glyph DEBIT"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span>Flat rent<small>Rent</small></span><b>−₹22,000.00</b></div>
+    <div class="mini"><span class="glyph REFUND"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span>Headphones returned<small>Shopping</small></span><b style="color:var(--color-refund)">+₹4,999.00</b></div>
+  </div>`,
+};
+</script>
+<script src="shared/data.js"></script>
+<script src="shared/app.js"></script>
+</body>
+</html>

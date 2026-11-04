@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerLines · Bahi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Direction A: Bahi. A bound account book: white ruled paper, blue-grey rules,
+   a red margin line, madder-red binding. Calm and bookish.
+   Light first, dark is "night ink". */
+:root {
+  --color-canvas: #F7F7F4;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F2EF;
+  --color-topbar: #FFFFFF;
+  --color-ink: #1C2230;
+  --color-muted: #596070;
+  --color-line: #DCE2EC;       /* decorative rules, ledger blue */
+  --color-field: #7E8799;      /* input borders, 3:1 */
+  --color-brand: #8E1F2F;      /* madder red, the bahi binding */
+  --color-brand-hover: #7A1827;
+  --color-on-brand: #FFFFFF;
+  --color-brand-soft: #F7E8EA;
+  --color-brand-ink: #8E1F2F;
+  --color-margin: #C8505F;     /* red margin rule, decorative */
+  --color-focus: #2A5699;
+  --color-income: #1C6B43;
+  --color-income-soft: #E3F1E8;
+  --color-expense: #1C2230;    /* expenses stay in ink: no alarm red for normal life */
+  --color-expense-soft: #ECEEF2;
+  --color-refund: #2A5699;
+  --color-refund-soft: #E6EEF9;
+  --color-chart-income: #1C6B43;
+  --color-chart-income-2: #CFE6D8;
+  --color-chart-spend: #8E1F2F;
+  --color-chart-net: #2A5699;
+  --color-danger: #A3221B;
+  --color-on-danger: #FFFFFF;
+  --color-danger-text: #A3221B;
+  --color-danger-soft: #FBEAE8;
+  --color-scrim: rgb(28 34 48 / .45);
+
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-weight-display: 600;
+
+  --radius-card: 6px;
+  --radius-control: 6px;
+  --radius-chip: 6px;
+  --radius-glyph: 4px;
+  --radius-fab: 50%;
+  --radius-sheet: 10px;
+  --card-border: 1px solid var(--color-line);
+  --shadow-card: none;
+  --shadow-chip: 0 1px 2px rgb(28 34 48 / .12);
+  --shadow-pop: 0 12px 32px rgb(28 34 48 / .18);
+  --shadow-fab: 0 4px 12px rgb(142 31 47 / .35);
+  --text-page: 28px;
+  --text-page-lg: 34px;
+  --text-card: 19px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --color-canvas: #14161B; --color-surface: #1C1F26; --color-surface-2: #252932; --color-topbar: #1C1F26;
+  --color-ink: #ECEAE4; --color-muted: #A4A9B4; --color-line: #2F3440; --color-field: #6E7585;
+  --color-brand: #F08C99; --color-brand-hover: #F4A3AE; --color-on-brand: #2A0A10; --color-brand-soft: #3A1E24; --color-brand-ink: #F4A3AE;
+  --color-margin: #9A4652; --color-focus: #94B8F2;
+  --color-income: #72D29C; --color-income-soft: #1D3328; --color-expense: #ECEAE4; --color-expense-soft: #2A2E37;
+  --color-refund: #94B8F2; --color-refund-soft: #1F2A3D;
+  --color-chart-income: #72D29C; --color-chart-income-2: #1D3328; --color-chart-spend: #F08C99; --color-chart-net: #94B8F2;
+  --color-danger: #F2877D; --color-on-danger: #2A0906; --color-danger-text: #F59C93; --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / .5); --shadow-fab: 0 4px 12px rgb(0 0 0 / .5);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --color-canvas: #14161B; --color-surface: #1C1F26; --color-surface-2: #252932; --color-topbar: #1C1F26;
+  --color-ink: #ECEAE4; --color-muted: #A4A9B4; --color-line: #2F3440; --color-field: #6E7585;
+  --color-brand: #F08C99; --color-brand-hover: #F4A3AE; --color-on-brand: #2A0A10; --color-brand-soft: #3A1E24; --color-brand-ink: #F4A3AE;
+  --color-margin: #9A4652; --color-focus: #94B8F2;
+  --color-income: #72D29C; --color-income-soft: #1D3328; --color-expense: #ECEAE4; --color-expense-soft: #2A2E37;
+  --color-refund: #94B8F2; --color-refund-soft: #1F2A3D;
+  --color-chart-income: #72D29C; --color-chart-income-2: #1D3328; --color-chart-spend: #F08C99; --color-chart-net: #94B8F2;
+  --color-danger: #F2877D; --color-on-danger: #2A0906; --color-danger-text: #F59C93; --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / .5); --shadow-fab: 0 4px 12px rgb(0 0 0 / .5);
+  color-scheme: dark;
+}
+</style>
+<link rel="stylesheet" href="shared/app.css">
+<style>
+/* Bahi specifics: ruled rows, a red margin rule, double rule under the net total */
+.topbar { border-top: 3px solid var(--color-brand); }
+.tab { border-radius: 0; min-height: 58px; }
+.tab .ind { top: auto; bottom: -1px; height: 2px; background: var(--color-brand); border-radius: 0; }
+.tab[aria-current="page"] { color: var(--color-brand-ink); }
+.page-head h1 { font-weight: 600; letter-spacing: -.01em; }
+
+.summary-card { padding: 0; }
+.summary { gap: 0; }
+.stat { padding: 16px 18px; border-top: 1px solid var(--color-line); }
+.stat-net { border-top: 0; }
+.stat-value { font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums lining-nums; }
+.stat-net .stat-value { display: inline-block; border-bottom: 4px double var(--color-ink); padding-bottom: 2px; }
+.stat-net .stat-value.neg { color: var(--color-danger-text); border-bottom-color: var(--color-danger-text); }
+.stat-in .stat-value { color: var(--color-income); }
+.stat-out { border-left: 1px solid var(--color-line); }
+@media (min-width: 768px) {
+  .stat { border-top: 0; padding: 20px 24px; }
+  .stat + .stat { border-left: 1px solid var(--color-line); }
+}
+
+.tx-list { border-left: 3px double var(--color-margin); }
+.recent .tx-list { border-left: 0; }
+.day-head { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--color-ink); }
+.glyph { width: 34px; height: 34px; }
+.cat-track { height: 6px; border-radius: 0; }
+.cat-fill { border-radius: 0; }
+.card-head h2 { font-weight: 600; }
+.month-label { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+/* Login: a ruled ledger page */
+.auth-side { background: var(--color-surface); border-right: 1px solid var(--color-line); align-items: center; justify-content: center; padding: 48px; }
+.ledger-art { width: 100%; max-width: 520px; background: var(--color-surface);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 39px, var(--color-line) 39px 40px);
+  border: 1px solid var(--color-line); border-left: 6px solid var(--color-brand); padding: 0 0 0 0; position: relative; font-family: var(--font-display); }
+.ledger-art .row { display: grid; grid-template-columns: 70px 1fr 120px; height: 40px; align-items: end; padding-bottom: 8px; }
+.ledger-art .row > * { padding: 0 12px; }
+.ledger-art .row > :first-child { border-right: 2px solid var(--color-margin); height: 40px; display: flex; align-items: end; padding-bottom: 8px; margin-bottom: -8px; color: var(--color-muted); font-size: 15px; }
+.ledger-art .hd { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+.ledger-art .amt { text-align: right; font-variant-numeric: tabular-nums; font-size: 17px; }
+.ledger-art .p { font-size: 18px; font-style: italic; }
+.ledger-art .total .amt { border-bottom: 4px double var(--color-ink); padding-bottom: 2px; font-weight: 700; }
+.ledger-cap { margin-top: 20px; font-family: var(--font-display); font-size: 26px; line-height: 1.25; max-width: 22ch; }
+</style>
+</head>
+<body class="dir-bahi">
+<div id="app"></div>
+<script>
+window.LL_DIR = {
+  id: "bahi",
+  nav: "tabs",
+  mark: '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="3" fill="var(--color-brand)"/><rect x="9" y="6" width="17" height="20" fill="var(--color-surface)"/><path d="M12 11h11M12 15h11M12 19h11M12 23h7" stroke="var(--color-line)" stroke-width="1.4"/><path d="M11 6v20" stroke="var(--color-margin)" stroke-width="1.4"/></svg>',
+  loginArt: () => `<div><div class="ledger-art">
+    <div class="row"><span class="hd">Date</span><span class="hd">Particulars</span><span class="hd" style="text-align:right">₹</span></div>
+    <div class="row"><span>1 Nov</span><span class="p">By salary</span><span class="amt">85,000.00</span></div>
+    <div class="row"><span>2 Nov</span><span class="p">To groceries</span><span class="amt">1,860.00</span></div>
+    <div class="row"><span>3 Nov</span><span class="p">To flat rent</span><span class="amt">22,000.00</span></div>
+    <div class="row"><span>3 Nov</span><span class="p">To gas cylinder</span><span class="amt">1,249.00</span></div>
+    <div class="row"><span></span><span class="p"></span><span class="amt"></span></div>
+    <div class="row total"><span></span><span class="p">Balance</span><span class="amt">59,891.00</span></div>
+    <div class="row"><span></span><span></span><span></span></div>
+  </div><p class="ledger-cap">Every rupee, written down. Like the bahi khata, minus the ink stains.</p></div>`,
+};
+</script>
+<script src="shared/data.js"></script>
+<script src="shared/app.js"></script>
+</body>
+</html>

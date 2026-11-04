@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerLines · Lamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Direction C: Lamp. A desk lamp over a night-blue desk: dark first, a warm
+   brass accent, monospaced figures, compact rows, a sidebar that scales to
+   Splits and more pages. Light mode is the daytime version. */
+:root {
+  --color-canvas: #10131A;
+  --color-surface: #181C26;
+  --color-surface-2: #212634;
+  --color-topbar: #10131A;
+  --color-ink: #E8EAF0;
+  --color-muted: #9AA2B4;
+  --color-line: #262C3A;
+  --color-field: #677088;
+  --color-brand: #F2B64F;      /* brass */
+  --color-brand-hover: #F6C772;
+  --color-on-brand: #1A1305;
+  --color-brand-soft: #3A2F18;
+  --color-brand-ink: #F2B64F;
+  --color-focus: #86B6F2;
+  --color-income: #52C78E;
+  --color-income-soft: #163026;
+  --color-expense: #F38677;
+  --color-expense-soft: #3A1F1E;
+  --color-refund: #86B6F2;
+  --color-refund-soft: #1C2A40;
+  --color-chart-income: #52C78E;
+  --color-chart-income-2: #163026;
+  --color-chart-spend: #F38677;
+  --color-chart-net: #F2B64F;
+  --color-danger: #F38677;
+  --color-on-danger: #2A0906;
+  --color-danger-text: #F59C93;
+  --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+
+  --font-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-weight-display: 600;
+
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --radius-chip: 8px;
+  --radius-glyph: 8px;
+  --radius-fab: 14px;
+  --radius-sheet: 14px;
+  --card-border: 1px solid var(--color-line);
+  --shadow-card: none;
+  --shadow-chip: 0 1px 2px rgb(0 0 0 / .4);
+  --shadow-pop: 0 16px 40px rgb(0 0 0 / .55);
+  --shadow-fab: 0 6px 18px rgb(242 182 79 / .25);
+  --text-page: 22px;
+  --text-page-lg: 24px;
+  --text-card: 15px;
+  --gap-grid: 14px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --color-canvas: #F3F4F7; --color-surface: #FFFFFF; --color-surface-2: #EBEDF2; --color-topbar: #F3F4F7;
+  --color-ink: #161A22; --color-muted: #535A6A; --color-line: #E1E4EA; --color-field: #858C9C;
+  --color-brand: #7F5300; --color-brand-hover: #6A4500; --color-on-brand: #FFFFFF; --color-brand-soft: #F6ECD8; --color-brand-ink: #7F5300;
+  --color-focus: #2357A3;
+  --color-income: #16764A; --color-income-soft: #E1F2E9; --color-expense: #B33526; --color-expense-soft: #F9E6E3;
+  --color-refund: #2357A3; --color-refund-soft: #E4ECF8;
+  --color-chart-income: #16764A; --color-chart-income-2: #D3EBDD; --color-chart-spend: #C24A3A; --color-chart-net: #7F5300;
+  --color-danger: #B33526; --color-on-danger: #FFFFFF; --color-danger-text: #B33526; --color-danger-soft: #F9E6E3;
+  --color-scrim: rgb(22 26 34 / .45);
+  --shadow-chip: 0 1px 2px rgb(22 26 34 / .14); --shadow-pop: 0 16px 40px rgb(22 26 34 / .18); --shadow-fab: 0 6px 18px rgb(127 83 0 / .3);
+  color-scheme: light;
+} }
+:root[data-theme="light"] {
+  --color-canvas: #F3F4F7; --color-surface: #FFFFFF; --color-surface-2: #EBEDF2; --color-topbar: #F3F4F7;
+  --color-ink: #161A22; --color-muted: #535A6A; --color-line: #E1E4EA; --color-field: #858C9C;
+  --color-brand: #7F5300; --color-brand-hover: #6A4500; --color-on-brand: #FFFFFF; --color-brand-soft: #F6ECD8; --color-brand-ink: #7F5300;
+  --color-focus: #2357A3;
+  --color-income: #16764A; --color-income-soft: #E1F2E9; --color-expense: #B33526; --color-expense-soft: #F9E6E3;
+  --color-refund: #2357A3; --color-refund-soft: #E4ECF8;
+  --color-chart-income: #16764A; --color-chart-income-2: #D3EBDD; --color-chart-spend: #C24A3A; --color-chart-net: #7F5300;
+  --color-danger: #B33526; --color-on-danger: #FFFFFF; --color-danger-text: #B33526; --color-danger-soft: #F9E6E3;
+  --color-scrim: rgb(22 26 34 / .45);
+  --shadow-chip: 0 1px 2px rgb(22 26 34 / .14); --shadow-pop: 0 16px 40px rgb(22 26 34 / .18); --shadow-fab: 0 6px 18px rgb(127 83 0 / .3);
+  color-scheme: light;
+}
+</style>
+<link rel="stylesheet" href="shared/app.css">
+<style>
+/* Lamp specifics: sidebar from 1024px, KPI strip with sparklines, dense rows */
+.sidebar { display: none; }
+.app-col { display: flex; flex-direction: column; min-height: 100%; flex: 1; min-width: 0; }
+@media (min-width: 1024px) {
+  .app { flex-direction: row; }
+  .sidebar {
+    display: flex; flex-direction: column; gap: 20px; width: 240px; flex: none;
+    position: sticky; top: 0; height: 100vh; padding: 20px 14px; border-right: 1px solid var(--color-line); background: var(--color-surface);
+  }
+  .sidebar .brand { padding: 0 6px; }
+  .side-add { width: 100%; }
+  .side-nav { display: grid; gap: 2px; }
+  .side-nav a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: var(--radius-control); color: var(--color-muted); font-weight: 600; text-decoration: none; }
+  .side-nav a:hover { background: var(--color-surface-2); color: var(--color-ink); }
+  .side-nav a[aria-current="page"] { color: var(--color-ink); }
+  .side-nav a > .ind { background: var(--color-surface-2); box-shadow: inset 3px 0 0 var(--color-brand); }
+  .side-nav .nav-icon { display: inline-grid; position: static; }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--color-line); padding-top: 12px; min-width: 0; }
+  .side-foot .menu { bottom: calc(100% + 6px); top: auto; left: 0; right: auto; }
+  .side-email { font-size: 13px; color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .topbar { display: none; }
+}
+.page-head h1 { font-weight: 600; }
+.card-head h2 { font-size: 15px; font-weight: 600; }
+.card-head .scope { font-family: var(--font-num); font-size: 12px; }
+.stat-value { font-weight: 500; letter-spacing: -.02em; }
+.stat-net .stat-value { color: var(--color-brand-ink); }
+.stat-net .stat-value.neg { color: var(--color-danger-text); }
+.spark { display: block; margin-top: 8px; max-width: 100%; }
+.summary-card { padding: 0; }
+.summary { gap: 0; }
+.stat { padding: 16px; border-top: 1px solid var(--color-line); }
+.stat-net { border-top: 0; }
+.stat-out { border-left: 1px solid var(--color-line); }
+@media (min-width: 768px) { .stat { border-top: 0; padding: 18px 20px; } .stat + .stat { border-left: 1px solid var(--color-line); } }
+
+.tx-main { min-height: 56px; padding: 8px 14px; }
+.glyph { width: 32px; height: 32px; }
+.glyph .icon { width: 16px; height: 16px; }
+.amount { font-weight: 500; }
+@media (min-width: 768px) { .tx-main { min-height: 48px; } }
+.tag { font-family: var(--font-num); }
+.month-label { font-family: var(--font-num); font-weight: 500; font-size: 14px; }
+.day-head { font-size: 13px; }
+.cat-track { height: 6px; border-radius: 2px; }
+.cat-fill { border-radius: 2px; }
+
+/* Login */
+.auth-side { background: var(--color-surface); border-right: 1px solid var(--color-line); align-items: center; justify-content: center; padding: 48px;
+  background-image: linear-gradient(var(--color-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-line) 1px, transparent 1px); background-size: 32px 32px; }
+.lamp-art { width: 100%; max-width: 480px; background: var(--color-canvas); border: 1px solid var(--color-line); border-radius: 12px; padding: 22px; display: grid; gap: 14px; }
+.lamp-art .k { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--color-muted); font-weight: 600; }
+.lamp-art .v { font-family: var(--font-num); font-size: 34px; color: var(--color-brand-ink); letter-spacing: -.02em; }
+.lamp-art svg { width: 100%; height: auto; }
+.lamp-art p { color: var(--color-muted); }
+</style>
+</head>
+<body class="dir-lamp">
+<div id="app"></div>
+<script>
+window.LL_DIR = {
+  id: "lamp",
+  nav: "sidebar",
+  darkFirst: true,
+  sparklines: true,
+  mark: '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--color-surface-2)" stroke="var(--color-line)"/><rect x="8" y="17" width="4" height="8" rx="1" fill="var(--color-muted)"/><rect x="14" y="12" width="4" height="13" rx="1" fill="var(--color-muted)"/><rect x="20" y="7" width="4" height="18" rx="1" fill="var(--color-brand)"/></svg>',
+  loginArt: () => `<div class="lamp-art">
+    <span class="k">Net, October 2026</span>
+    <span class="v">+₹97,416.00</span>
+    <svg viewBox="0 0 400 120" aria-hidden="true">
+      <path d="M0 110 L0 40 L40 40 L60 52 L100 58 L130 66 L160 70 L190 40 L220 44 L250 50 L280 54 L310 60 L340 62 L370 66 L400 70 L400 110 Z" fill="var(--color-brand-soft)"/>
+      <path d="M0 40 L40 40 L60 52 L100 58 L130 66 L160 70 L190 40 L220 44 L250 50 L280 54 L310 60 L340 62 L370 66 L400 70" fill="none" stroke="var(--color-brand)" stroke-width="2"/>
+      <circle cx="400" cy="70" r="4" fill="var(--color-brand)"/>
+    </svg>
+    <p>Your money, by the month. Every figure in rupees and paise.</p>
+  </div>`,
+};
+</script>
+<script src="shared/data.js"></script>
+<script src="shared/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerLines · Roznamcha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Direction D: Roznamcha, the daybook. Lamp's night desk and structure
+   (dark first, an accent of brass, neem green or madder, sidebar, compact rows, mono figures, sparklines)
+   with Bahi's ledger hand (serif headings and totals, a double rule under
+   what's left over, a red margin line down every list).
+   Light mode is Bahi's ruled paper with a brass binding. */
+:root {
+  --color-canvas: #10131A;
+  --color-surface: #181C26;
+  --color-surface-2: #212634;
+  --color-topbar: #10131A;
+  --color-ink: #E8EAF0;
+  --color-muted: #9AA2B4;
+  --color-line: #262C3A;       /* decorative rules */
+  --color-field: #677088;      /* input borders, 3:1 */
+  --color-brand: #F2B64F;      /* brass */
+  --color-brand-hover: #F6C772;
+  --color-on-brand: #1A1305;
+  --color-brand-soft: #3A2F18;
+  --color-brand-ink: #F2B64F;
+  --color-margin: #A9505D;     /* the ledger's red margin rule, decorative */
+  --color-focus: #86B6F2;
+  --color-income: #52C78E;
+  --color-income-soft: #163026;
+  --color-expense: #E8EAF0;    /* expenses in ink, as in Bahi */
+  --color-expense-soft: #262B38;
+  --color-refund: #86B6F2;
+  --color-refund-soft: #1C2A40;
+  --color-chart-income: #52C78E;
+  --color-chart-income-2: #163026;
+  --color-chart-spend: #EE8E9A; /* madder rose */
+  --color-chart-net: #F2B64F;
+  --color-danger: #F38677;
+  --color-on-danger: #2A0906;
+  --color-danger-text: #F59C93;
+  --color-danger-soft: #3A1D1B;
+  --color-scrim: rgb(0 0 0 / .6);
+
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-weight-display: 600;
+
+  --radius-card: 8px;
+  --radius-control: 8px;
+  --radius-chip: 8px;
+  --radius-glyph: 6px;
+  --radius-fab: 14px;
+  --radius-sheet: 14px;
+  --card-border: 1px solid var(--color-line);
+  --shadow-card: none;
+  --shadow-chip: 0 1px 2px rgb(0 0 0 / .4);
+  --shadow-pop: 0 16px 40px rgb(0 0 0 / .55);
+  --shadow-fab: 0 6px 18px rgb(242 182 79 / .25);
+  --text-page: 28px;
+  --text-page-lg: 34px;
+  --text-card: 19px;
+  --gap-grid: 14px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --color-canvas: #F7F7F4; --color-surface: #FFFFFF; --color-surface-2: #F1F2EF; --color-topbar: #FFFFFF;
+  --color-ink: #1C2230; --color-muted: #596070; --color-line: #DCE2EC; --color-field: #7E8799;
+  --color-brand: #7F5300; --color-brand-hover: #6A4500; --color-on-brand: #FFFFFF; --color-brand-soft: #F6ECD8; --color-brand-ink: #7F5300;
+  --color-margin: #C8505F; --color-focus: #2A5699;
+  --color-income: #1C6B43; --color-income-soft: #E3F1E8; --color-expense: #1C2230; --color-expense-soft: #ECEEF2;
+  --color-refund: #2A5699; --color-refund-soft: #E6EEF9;
+  --color-chart-income: #1C6B43; --color-chart-income-2: #CFE6D8; --color-chart-spend: #8E1F2F; --color-chart-net: #7F5300;
+  --color-danger: #A3221B; --color-on-danger: #FFFFFF; --color-danger-text: #A3221B; --color-danger-soft: #FBEAE8;
+  --color-scrim: rgb(28 34 48 / .45);
+  --shadow-chip: 0 1px 2px rgb(28 34 48 / .12); --shadow-pop: 0 12px 32px rgb(28 34 48 / .18); --shadow-fab: 0 6px 18px rgb(127 83 0 / .3);
+  color-scheme: light;
+} }
+:root[data-theme="light"] {
+  --color-canvas: #F7F7F4; --color-surface: #FFFFFF; --color-surface-2: #F1F2EF; --color-topbar: #FFFFFF;
+  --color-ink: #1C2230; --color-muted: #596070; --color-line: #DCE2EC; --color-field: #7E8799;
+  --color-brand: #7F5300; --color-brand-hover: #6A4500; --color-on-brand: #FFFFFF; --color-brand-soft: #F6ECD8; --color-brand-ink: #7F5300;
+  --color-margin: #C8505F; --color-focus: #2A5699;
+  --color-income: #1C6B43; --color-income-soft: #E3F1E8; --color-expense: #1C2230; --color-expense-soft: #ECEEF2;
+  --color-refund: #2A5699; --color-refund-soft: #E6EEF9;
+  --color-chart-income: #1C6B43; --color-chart-income-2: #CFE6D8; --color-chart-spend: #8E1F2F; --color-chart-net: #7F5300;
+  --color-danger: #A3221B; --color-on-danger: #FFFFFF; --color-danger-text: #A3221B; --color-danger-soft: #FBEAE8;
+  --color-scrim: rgb(28 34 48 / .45);
+  --shadow-chip: 0 1px 2px rgb(28 34 48 / .12); --shadow-pop: 0 12px 32px rgb(28 34 48 / .18); --shadow-fab: 0 6px 18px rgb(127 83 0 / .3);
+  color-scheme: light;
+}
+
+/* Accent options. Brass is the default; data-accent swaps it.
+   Neem green: income moves to a leaf green so money-in never looks like a button.
+   Madder: spending bars move to slate so red only means the brand and the ledger margin. */
+:root[data-accent="neem"] {
+  --color-brand: #56D3B0; --color-brand-hover: #74DEC0; --color-on-brand: #05231B; --color-brand-soft: #173A31; --color-brand-ink: #74DEC0;
+  --color-income: #9CCF6E; --color-income-soft: #22301A; --color-chart-income: #9CCF6E; --color-chart-income-2: #22301A; --color-chart-net: #56D3B0;
+  --shadow-fab: 0 6px 18px rgb(86 211 176 / .22);
+}
+@media (prefers-color-scheme: light) { :root[data-accent="neem"]:not([data-theme="dark"]) {
+  --color-brand: #0B6A56; --color-brand-hover: #085A49; --color-on-brand: #FFFFFF; --color-brand-soft: #D9F0E8; --color-brand-ink: #0B6A56;
+  --color-income: #3D7417; --color-income-soft: #E8F2DD; --color-chart-income: #3D7417; --color-chart-income-2: #D9EBC6; --color-chart-net: #0B6A56;
+  --shadow-fab: 0 6px 18px rgb(11 106 86 / .3);
+} }
+:root[data-accent="neem"][data-theme="light"] {
+  --color-brand: #0B6A56; --color-brand-hover: #085A49; --color-on-brand: #FFFFFF; --color-brand-soft: #D9F0E8; --color-brand-ink: #0B6A56;
+  --color-income: #3D7417; --color-income-soft: #E8F2DD; --color-chart-income: #3D7417; --color-chart-income-2: #D9EBC6; --color-chart-net: #0B6A56;
+  --shadow-fab: 0 6px 18px rgb(11 106 86 / .3);
+}
+:root[data-accent="madder"] {
+  --color-brand: #F08C99; --color-brand-hover: #F4A3AE; --color-on-brand: #2A0A10; --color-brand-soft: #3A1E24; --color-brand-ink: #F4A3AE;
+  --color-chart-spend: #A9B4CC; --color-chart-net: #F08C99;
+  --shadow-fab: 0 6px 18px rgb(240 140 153 / .22);
+}
+@media (prefers-color-scheme: light) { :root[data-accent="madder"]:not([data-theme="dark"]) {
+  --color-brand: #8E1F2F; --color-brand-hover: #7A1827; --color-on-brand: #FFFFFF; --color-brand-soft: #F7E8EA; --color-brand-ink: #8E1F2F;
+  --color-chart-spend: #46526B; --color-chart-net: #8E1F2F;
+  --shadow-fab: 0 6px 18px rgb(142 31 47 / .3);
+} }
+:root[data-accent="madder"][data-theme="light"] {
+  --color-brand: #8E1F2F; --color-brand-hover: #7A1827; --color-on-brand: #FFFFFF; --color-brand-soft: #F7E8EA; --color-brand-ink: #8E1F2F;
+  --color-chart-spend: #46526B; --color-chart-net: #8E1F2F;
+  --shadow-fab: 0 6px 18px rgb(142 31 47 / .3);
+}
+</style>
+<link rel="stylesheet" href="shared/app.css">
+<style>
+/* From Lamp: sidebar from 1024px, KPI strip with sparklines, compact rows, mono figures */
+.sidebar { display: none; }
+.app-col { display: flex; flex-direction: column; min-height: 100%; flex: 1; min-width: 0; }
+@media (min-width: 1024px) {
+  .app { flex-direction: row; }
+  .sidebar {
+    display: flex; flex-direction: column; gap: 20px; width: 240px; flex: none;
+    position: sticky; top: 0; height: 100vh; padding: 20px 14px; border-right: 1px solid var(--color-line); background: var(--color-surface);
+    border-left: 3px solid var(--color-brand);
+  }
+  .sidebar .brand { padding: 0 6px; }
+  .side-add { width: 100%; }
+  .side-nav { display: grid; gap: 2px; }
+  .side-nav a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: var(--radius-control); color: var(--color-muted); font-weight: 600; text-decoration: none; }
+  .side-nav a:hover { background: var(--color-surface-2); color: var(--color-ink); }
+  .side-nav a[aria-current="page"] { color: var(--color-ink); }
+  .side-nav a > .ind { background: var(--color-surface-2); box-shadow: inset 3px 0 0 var(--color-brand); }
+  .side-nav .nav-icon { display: inline-grid; position: static; }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--color-line); padding-top: 12px; min-width: 0; }
+  .side-foot .menu { bottom: calc(100% + 6px); top: auto; left: 0; right: auto; }
+  .side-email { font-size: 13px; color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .topbar { display: none; }
+}
+.spark { display: block; margin-top: 8px; max-width: 100%; }
+.summary-card { padding: 0; }
+.summary { gap: 0; }
+.stat { padding: 16px; border-top: 1px solid var(--color-line); }
+.stat-net { border-top: 0; }
+.stat-out { border-left: 1px solid var(--color-line); }
+@media (min-width: 768px) { .stat { border-top: 0; padding: 18px 22px; } .stat + .stat { border-left: 1px solid var(--color-line); } }
+.tx-main { min-height: 56px; padding: 8px 14px; }
+@media (min-width: 768px) { .tx-main { min-height: 50px; } }
+.glyph { width: 32px; height: 32px; }
+.glyph .icon { width: 16px; height: 16px; }
+.amount { font-weight: 500; }
+.tag { font-family: var(--font-num); }
+.card-head .scope { font-family: var(--font-num); font-size: 12px; }
+.cat-track { height: 6px; border-radius: 0; }
+.cat-fill { border-radius: 0; }
+
+/* From Bahi: the ledger hand. Serif headings and totals, the brass binding,
+   a double rule under what's left over, a red margin line down every list */
+.topbar { border-top: 3px solid var(--color-brand); }
+.tab { border-radius: 0; min-height: 58px; }
+.tab .ind { top: auto; bottom: -1px; height: 2px; background: var(--color-brand); border-radius: 0; }
+.tab[aria-current="page"] { color: var(--color-ink); }
+.page-head h1 { letter-spacing: -.01em; }
+.month-label { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.stat-value { font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums lining-nums; }
+.stat-net .stat-value { display: inline-block; color: var(--color-brand-ink); border-bottom: 4px double currentColor; padding-bottom: 2px; }
+.stat-net .stat-value.neg { color: var(--color-danger-text); }
+.stat-in .stat-value { color: var(--color-income); }
+.tx-list { border-left: 3px double var(--color-margin); }
+.recent .tx-list { border-left: 0; }
+.day-head { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--color-ink); }
+.day-head .num { font-size: 13px; font-weight: 500; color: var(--color-muted); }
+
+/* Login: a daybook page under the lamp */
+.auth-side { background: var(--color-surface); border-right: 1px solid var(--color-line); align-items: center; justify-content: center; padding: 48px; }
+.ledger-art { width: 100%; max-width: 520px; background: var(--color-canvas);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 39px, var(--color-line) 39px 40px);
+  border: 1px solid var(--color-line); border-left: 6px solid var(--color-brand); font-family: var(--font-display); }
+.ledger-art .row { display: grid; grid-template-columns: 70px 1fr 130px; height: 40px; align-items: end; padding-bottom: 8px; }
+.ledger-art .row > * { padding: 0 12px; }
+.ledger-art .row > :first-child { border-right: 2px solid var(--color-margin); height: 40px; display: flex; align-items: end; padding-bottom: 8px; margin-bottom: -8px; color: var(--color-muted); font-size: 15px; }
+.ledger-art .hd, .ledger-art .row > .hd:first-child { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--color-muted); }
+.ledger-art .amt { text-align: right; font-family: var(--font-num); font-size: 15px; color: var(--color-ink); }
+.ledger-art .p { font-size: 18px; font-style: italic; color: var(--color-ink); }
+.ledger-art .total .amt { color: var(--color-brand-ink); border-bottom: 4px double currentColor; padding-bottom: 2px; font-weight: 600; }
+.ledger-cap { margin-top: 20px; font-family: var(--font-display); font-size: 26px; line-height: 1.25; max-width: 24ch; color: var(--color-ink); }
+</style>
+</head>
+<body class="dir-roznamcha">
+<div id="app"></div>
+<script>
+window.LL_DIR = {
+  id: "roznamcha",
+  nav: "sidebar",
+  darkFirst: true,
+  sparklines: true,
+  mark: '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" fill="var(--color-brand)"/><rect x="9" y="6" width="17" height="20" rx="1" fill="var(--color-surface)"/><path d="M13 11h10M13 15h10M13 19h10M13 23h6" stroke="var(--color-field)" stroke-width="1.4"/><path d="M11.5 6v20" stroke="var(--color-margin)" stroke-width="1.4"/></svg>',
+  loginArt: () => `<div><div class="ledger-art">
+    <div class="row"><span class="hd">Date</span><span class="hd">Particulars</span><span class="hd" style="text-align:right">₹</span></div>
+    <div class="row"><span>1 Nov</span><span class="p">By salary</span><span class="amt">85,000.00</span></div>
+    <div class="row"><span>2 Nov</span><span class="p">To groceries</span><span class="amt">1,860.00</span></div>
+    <div class="row"><span>3 Nov</span><span class="p">To flat rent</span><span class="amt">22,000.00</span></div>
+    <div class="row"><span>3 Nov</span><span class="p">To gas cylinder</span><span class="amt">1,249.00</span></div>
+    <div class="row"><span></span><span></span><span></span></div>
+    <div class="row total"><span></span><span class="p">Left over</span><span class="amt">59,891.00</span></div>
+    <div class="row"><span></span><span></span><span></span></div>
+  </div><p class="ledger-cap">Every rupee in the daybook, written down by day.</p></div>`,
+};
+</script>
+<script src="shared/data.js"></script>
+<script src="shared/app.js"></script>
+</body>
+</html>
