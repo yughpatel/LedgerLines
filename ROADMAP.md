@@ -57,7 +57,7 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 Deferred because nothing calls them yet. Pick them up when a real need appears.
 
 - [ ] Multi-month trend (month buckets over a range, with a bucket-count cap)
-- [ ] Date filters on the category analytics endpoints
+- [x] Date filters on the category analytics endpoints: `year` + `month` on both, and on `/transactions/summary`, for the month picker in the new design. No parameters keeps the category endpoints all-time
 - [ ] Link refunds to their purchase (`refund_of_id`): catches refunds larger than the purchase, and refunds recorded under a different category. Would change `test_refund_without_any_purchase_is_accepted`
 
 ## Phase 3: Expense splitting

@@ -8,15 +8,15 @@ Each step below is one pull request. The app keeps working after every step.
 
 ## Before step 1: decisions and backend changes
 
-**Backend changes the design needs (none are made yet):**
+**Backend changes the design needs:**
 
-| Change | Why | Size |
+| Change | Why | Status |
 |---|---|---|
-| `GET /transactions/summary?year=&month=` | Today it always returns the current IST month, so the month picker can't show past months | Small: the date range is already computed from "today" |
-| `GET /analytics/spending-by-category?year=&month=` and `/income-by-category?year=&month=` | Today they are all-time, so the category bars would disagree with every other number on the page | Small: same half-open IST month range the trend endpoint uses |
-| Later: `GET /transactions?year=&month=&limit=&offset=` | The list loads every row. Fine for one person for now; filters and paging run in the browser | Medium, not needed yet |
+| `GET /transactions/summary?year=&month=` | It only returned the current IST month, so the month picker couldn't show past months | Done |
+| `GET /analytics/spending-by-category?year=&month=` and `/income-by-category?year=&month=` | They were all-time, so the category bars would disagree with every other number on the page. No parameters still means all-time. For one month, spending keeps negative categories, so the bars add up to the summary's Spent | Done |
+| Later: `GET /transactions?year=&month=&limit=&offset=` | The list loads every row. Fine for one person for now; filters and paging run in the browser | Not needed yet |
 
-Until the first two exist, step 3 can compute the month's summary and category totals in the browser from `GET /transactions`. That works, but it's throwaway code. I recommend making the two backend changes first.
+All three endpoints share the month rules in `backend/app/services/period.py`: pass both `year` and `month` or neither, 2020 onward, and no future months (422 otherwise).
 
 **Fonts:** Newsreader (serif), IBM Plex Sans and IBM Plex Mono. Two ways to load them:
 - **Recommended:** `@fontsource-variable/newsreader`, `@fontsource/ibm-plex-sans` and `@fontsource/ibm-plex-mono` from npm. They're self-hosted, so there are no third-party requests and nothing to change in the CSP later. Import only the weights used: serif 600, sans 400/500/600/700, mono 400/500.

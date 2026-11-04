@@ -100,7 +100,7 @@ def client(db_session):
 @pytest.fixture
 def freeze_now(monkeypatch):
     """
-    Pin datetime.now() in the routes that read "today", given as IST wall-clock time.
+    Pin datetime.now() where the routes read "today", given as IST wall-clock time.
 
     The summary and the trend default both depend on the current month, and a test that
     depends on the real date breaks on the 1st of some month for no visible reason.
@@ -115,7 +115,7 @@ def freeze_now(monkeypatch):
             def now(cls, tz=None):
                 return frozen.astimezone(tz) if tz else frozen.replace(tzinfo=None)
 
-        monkeypatch.setattr("app.api.routes.transaction.datetime", FrozenDatetime)
-        monkeypatch.setattr("app.api.routes.analytics.datetime", FrozenDatetime)
+        # Every route that reads "today" goes through app.services.period
+        monkeypatch.setattr("app.services.period.datetime", FrozenDatetime)
 
     return freeze

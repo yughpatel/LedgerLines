@@ -1,13 +1,15 @@
 from decimal import Decimal
 
+import pytest
+
 from app.models.transaction import TransactionType
 from tests.factories import auth_headers, make_category, make_transaction, make_user
 
 CREDIT, DEBIT, REFUND = TransactionType.CREDIT, TransactionType.DEBIT, TransactionType.REFUND
 
 
-def get_summary(client, user):
-    response = client.get("/transactions/summary", headers=auth_headers(user))
+def get_summary(client, user, **params):
+    response = client.get("/transactions/summary", params=params, headers=auth_headers(user))
     assert response.status_code == 200, response.text
     body = response.json()
     # Compared as Decimals: an empty sum is served as "0", a non-empty one as "0.00"
@@ -104,3 +106,62 @@ def test_refund_without_any_purchase_is_accepted(client, db_session, freeze_now)
 
     assert response.status_code == 201, response.text
     assert get_summary(client, user)["total_spent"] == Decimal("-500000.00")
+
+
+def test_a_past_month_can_be_asked_for(client, db_session, freeze_now):
+    freeze_now("2026-11-03 18:00")
+    user = make_user(db_session)
+    make_transaction(db_session, user, CREDIT, "85000.00", at="2026-10-01 09:00")
+    make_transaction(db_session, user, DEBIT, "22000.00", at="2026-10-03 10:00")
+    make_transaction(db_session, user, DEBIT, "1249.00", at="2026-11-03 11:25")  # this month, not October
+
+    summary = get_summary(client, user, year=2026, month=10)
+
+    assert summary == {
+        "year": 2026,
+        "month": 10,
+        "total_earned": Decimal("85000.00"),
+        "total_spent": Decimal("22000.00"),
+        "net": Decimal("63000.00"),
+    }
+
+
+def test_the_current_month_can_be_asked_for_explicitly(client, db_session, freeze_now):
+    freeze_now("2026-11-03 18:00")
+    user = make_user(db_session)
+    make_transaction(db_session, user, DEBIT, "1249.00", at="2026-11-03 11:25")
+
+    assert get_summary(client, user, year=2026, month=11) == get_summary(client, user)
+
+
+def test_a_past_december_ends_at_ist_midnight_on_new_year(client, db_session, freeze_now):
+    freeze_now("2026-03-10 12:00")
+    user = make_user(db_session)
+    make_transaction(db_session, user, DEBIT, "75.00", at="2025-12-31 23:59:59.999999")
+    make_transaction(db_session, user, DEBIT, "99.00", at="2026-01-01 00:00")
+
+    summary = get_summary(client, user, year=2025, month=12)
+
+    assert (summary["year"], summary["month"]) == (2025, 12)
+    assert summary["total_spent"] == Decimal("75.00")
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"year": 2026, "month": 12},           # after the frozen current month
+        {"year": 2027, "month": 1},            # a later year
+        {"year": 2026},                        # year without month
+        {"month": 9},                          # month without year
+        {"year": 2019, "month": 12},           # before the 2020 floor
+        {"year": 2026, "month": 13},
+        {"year": 2026, "month": 0},
+    ],
+)
+def test_invalid_month_is_rejected_with_422(client, db_session, freeze_now, params):
+    freeze_now("2026-11-03 18:00")
+    user = make_user(db_session)
+
+    response = client.get("/transactions/summary", params=params, headers=auth_headers(user))
+
+    assert response.status_code == 422, response.text

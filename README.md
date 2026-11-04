@@ -53,7 +53,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
   - Amounts stored as `Numeric(10, 2)`, never `float`
   - Each listed transaction gets a per-user sequence number (`seq_number`, from `ROW_NUMBER()`)
 - **Categories:** system defaults (Food, Rent, Travel, Utilities, Other) plus custom categories, unique per user ignoring case. Custom categories can be deleted if no transaction uses them.
-- **Monthly summary:** total earned, total spent and net for the current calendar month in IST (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
+- **Monthly summary:** total earned, total spent and net for one calendar month in IST (the current month unless `year` and `month` are given) (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
 - **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
 - **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards, a daily/weekly income and spending chart for the current month, and spending-by-category and income-by-category charts. The summary and charts refresh after every create, edit or delete.
@@ -286,7 +286,7 @@ Protected endpoints need `Authorization: Bearer <access token>`. Full schemas ar
 |---|---|---|
 | GET | `/transactions` | List your transactions, newest date first, with `seq_number` |
 | POST | `/transactions` | Create (201) |
-| GET | `/transactions/summary` | This IST month's `year`, `month`, `total_earned`, `total_spent`, `net` |
+| GET | `/transactions/summary` | `year`, `month`, `total_earned`, `total_spent`, `net` for one IST calendar month. Query: `year` + `month` (both or neither, default current month, 2020 onward, not in the future). |
 | GET | `/transactions/{id}` | Get one (404 if missing or not yours) |
 | PUT | `/transactions/{id}` | Partial update |
 | DELETE | `/transactions/{id}` | Delete (204) |
@@ -303,8 +303,8 @@ Protected endpoints need `Authorization: Bearer <access token>`. Full schemas ar
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/analytics/spending-by-category` | All-time DEBIT minus REFUND per category. Categories at zero or below are left out. |
-| GET | `/analytics/income-by-category` | All-time CREDIT per category |
+| GET | `/analytics/spending-by-category` | DEBIT minus REFUND per category. All-time, or one IST calendar month with `year` + `month` (same rules as the summary). All-time leaves out categories at zero or below; one month leaves out only zero, so a refund for an earlier month's purchase shows as a negative total and the categories add up to the summary's `total_spent`. |
+| GET | `/analytics/income-by-category` | CREDIT per category. All-time, or one IST calendar month with `year` + `month`. |
 | GET | `/analytics/trend` | Income and spending per `day` or `week` for one IST calendar month. Query: `year` + `month` (both or neither, default current month, 2020 onward, not in the future), `bucket` (default `day`). |
 
 The two category endpoints return `category_id`, `category_name` and `total`, sorted by total (desc), then name, then id. `total` is a decimal string such as `"800.00"`.
