@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--PAGE-->
+<title>LedgerLines Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&family=Public+Sans:wght@400;600&family=Plus+Jakarta+Sans:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Review board: a control strip and a live device frame on top, the three
+   direction specs below. Chrome stays neutral so the mockups carry the colour. */
+:root {
+  --bg: #F4F4F2; --panel: #FFFFFF; --panel-2: #EDEDEA; --fg: #1A1B1E; --muted: #5C5F66; --line: #DEDED9; --field: #84878F;
+  --accent: #1A1B1E; --on-accent: #FFFFFF; --ok: #1F6B44; --frame: #1A1B1E;
+  --font-ui: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111214; --panel: #1A1B1E; --panel-2: #24262A; --fg: #ECECEA; --muted: #A3A6AD; --line: #2E3035; --field: #70737B;
+  --accent: #ECECEA; --on-accent: #111214; --ok: #6FD39E; --frame: #000000; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #111214; --panel: #1A1B1E; --panel-2: #24262A; --fg: #ECECEA; --muted: #A3A6AD; --line: #2E3035; --field: #70737B;
+  --accent: #ECECEA; --on-accent: #111214; --ok: #6FD39E; --frame: #000000; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { padding-block: 32px 8px; }
+h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; line-height: 1.1; text-wrap: balance; }
+h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; text-wrap: balance; }
+h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 68ch; margin-top: 10px; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.controls { position: static; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 14px; border-bottom: 1px solid var(--line); margin-top: 20px; }
+@media (min-width: 760px) { .controls { position: sticky; } }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ctl > span { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--panel-2); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .15); }
+
+.stage { padding-block: 24px; display: grid; gap: 12px; justify-items: center; }
+.device { background: var(--frame); padding: 10px; border-radius: 34px; max-width: 100%; }
+.device iframe { display: block; border: 0; border-radius: 26px; background: #fff; width: 390px; height: 780px; max-width: 100%; }
+.desk { width: 100%; background: var(--frame); border-radius: 12px; padding: 8px; }
+.desk .viewport { position: relative; overflow: hidden; border-radius: 6px; width: 100%; }
+.desk iframe { position: absolute; top: 0; left: 0; border: 0; width: 1366px; height: 860px; transform-origin: 0 0; background: #fff; }
+.stage-note { font-size: 13px; color: var(--muted); text-align: center; max-width: 70ch; }
+.stage-note a { color: var(--fg); }
+
+.dirs { display: grid; gap: 20px; padding-block: 12px 40px; }
+.dir { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.dir-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.dir-head .tag { font-size: 13px; color: var(--muted); }
+.dir-head button { font: inherit; font-weight: 600; font-size: 14px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--field); background: var(--panel); color: var(--fg); cursor: pointer; }
+.mood { max-width: 70ch; }
+.grid2 { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sw-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.sw { border-radius: 8px; border: 1px solid var(--line); overflow: hidden; font-family: var(--font-mono); font-size: 11px; min-width: 0; }
+.sw i { display: block; height: 34px; }
+.sw b { display: block; padding: 4px 6px 0; font-family: var(--font-ui); font-weight: 600; font-size: 12px; }
+.sw span { display: block; padding: 0 6px 5px; color: var(--muted); }
+.fonts { display: grid; gap: 6px; margin-top: 8px; }
+.fonts .sample { font-size: 26px; line-height: 1.15; }
+.fonts .meta { font-size: 13px; color: var(--muted); }
+ul.plain { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+.tbl { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; font-size: 13px; width: 100%; min-width: 520px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; border: 1px solid var(--line); }
+.pass { color: var(--ok); font-weight: 600; }
+
+.notes { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 14px; margin-bottom: 48px; }
+.notes ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 80ch; }
+.notes strong { font-weight: 600; }
+</style>
+<!--/PAGE-->
+</head>
+<body>
+<header class="top wrap">
+  <h1>LedgerLines design directions</h1>
+  <p class="lede">Four looks for the same two-page app. D combines Bahi and Lamp. Each mockup is clickable: change the month, filter and search transactions, add or edit one, delete one, sign in. Every screen works at 390px and 1366px, in light and dark.</p>
+</header>
+
+<div class="controls"><div class="wrap ctl-row">
+  <div class="ctl"><span id="l-dir">Direction</span><div class="seg" role="group" aria-labelledby="l-dir" data-k="dir">
+    <button data-v="bahi">A · Bahi</button><button data-v="neem">B · Neem</button><button data-v="lamp">C · Lamp</button><button data-v="roznamcha">D · Roznamcha</button></div></div>
+  <div class="ctl"><span id="l-scr">Screen</span><div class="seg" role="group" aria-labelledby="l-scr" data-k="screen">
+    <button data-v="overview">Overview</button><button data-v="transactions">Transactions</button><button data-v="add">Add form</button><button data-v="login">Login</button><button data-v="signup">Sign up</button></div></div>
+  <div class="ctl"><span id="l-w">Width</span><div class="seg" role="group" aria-labelledby="l-w" data-k="width">
+    <button data-v="390">Phone 390</button><button data-v="1366">Desktop 1366</button></div></div>
+  <div class="ctl"><span id="l-th">Theme</span><div class="seg" role="group" aria-labelledby="l-th" data-k="theme">
+    <button data-v="light">Light</button><button data-v="dark">Dark</button></div></div>
+  <div class="ctl" id="ctl-accent"><span id="l-ac">Accent</span><div class="seg" role="group" aria-labelledby="l-ac" data-k="accent">
+    <button data-v="neem">Neem green</button><button data-v="madder">Madder</button><button data-v="brass">Brass</button></div></div>
+</div></div>
+
+<section class="stage wrap" aria-label="Mockup preview">
+  <div id="frame"></div>
+  <p class="stage-note">Sample data: one person in Bengaluru, August to 3 November 2026. The mockup opens on October so you see a full month; the real app opens on the current month. Changes you make live in memory until reload. <a id="open" href="lamp.html" target="_blank" rel="noopener">Open this mockup on its own</a></p>
+</section>
+
+<main class="wrap">
+  <div class="dirs" id="dirs"></div>
+  <section class="notes" aria-labelledby="n-h">
+    <h2 id="n-h">Notes on your decisions</h2>
+    <ol>
+      <li><strong>Two pages with tabs and a bottom bar: agree,</strong> with one change. Add is the most common action, so it gets its own spot: a raised button in the middle of the phone bar and a button in the desktop header. Log out and theme move into an account menu. Lamp uses a sidebar on wide screens, which has room for Splits, Categories and Settings without crowding.</li>
+      <li><strong>One month picker: agree, but it needs backend work.</strong> <code>GET /transactions/summary</code> takes no year or month today; it always returns the current IST month. The category endpoints are all-time. So the picker needs <code>year</code> and <code>month</code> on the summary and on both category endpoints. Until then, the frontend could work these numbers out from <code>GET /transactions</code>, which returns every row, but that stops scaling once a user has a few thousand rows.</li>
+      <li><strong>Rows grouped by day: agree, and use them on desktop too.</strong> One component instead of a table plus a list. On desktop the row just shows more columns (category, time, edit and delete buttons). On phones, tap a row to edit; Delete lives inside the edit form.</li>
+      <li><strong>Search, filters and paging work client-side for now.</strong> The list endpoint has no filters or paging, so the mockup loads the month and filters in the browser, 20 rows at a time. Fine for one person's data. Server-side filters can come later without changing the design.</li>
+      <li><strong>Refunds show as +₹ with a Refund tag and a return-arrow icon,</strong> never in the income colour, and the type form says what a refund does. Expenses are not painted red in Bahi and Neem; normal spending isn't an error.</li>
+      <li><strong>Motion follows what you do, and only then.</strong> Tab underlines, switches and filter chips slide to the new choice. Totals count to the new month's figures, chart bars reshape, category bars slide to new widths and trend lines draw in. The add form rises from the bottom on phones and can be swiped down to close. A deleted row folds away; a new one flashes once. Typing in search doesn't animate anything. With "reduce motion" on, all of it switches off.</li>
+      <li><strong>The trend chart only shows a negative zone when a bucket really is negative.</strong> October 16 is one: the headphones refund was bigger than that day's spending. Every chart also has a hidden data table for screen readers, and arrow keys move through the days.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+const TOKENS = {"bahi": {"light": {"rows": [["Body text", "ink", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Secondary text", "muted", "surface", "#596070", "#FFFFFF", 6.3, 4.5], ["Income", "income", "surface", "#1C6B43", "#FFFFFF", 6.49, 4.5], ["Expense", "expense", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Refund", "refund", "surface", "#2A5699", "#FFFFFF", 7.27, 4.5], ["Links, active tab", "brand-ink", "surface", "#8E1F2F", "#FFFFFF", 8.8, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#8E1F2F", 8.8, 4.5], ["Refund tag", "refund", "refund-soft", "#2A5699", "#E6EEF9", 6.22, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#8E1F2F", "#F7E8EA", 7.41, 4.5], ["Errors", "danger-text", "surface", "#A3221B", "#FFFFFF", 7.49, 4.5], ["Input border", "field", "surface", "#7E8799", "#FFFFFF", 3.61, 3], ["Spending bars", "chart-spend", "surface", "#8E1F2F", "#FFFFFF", 8.8, 3], ["Income bars", "chart-income", "surface", "#1C6B43", "#FFFFFF", 6.49, 3], ["Focus ring", "focus", "surface", "#2A5699", "#FFFFFF", 7.27, 3]], "swatch": {"canvas": "#F7F7F4", "surface": "#FFFFFF", "ink": "#1C2230", "muted": "#596070", "brand": "#8E1F2F", "income": "#1C6B43", "expense": "#1C2230", "refund": "#2A5699"}}, "dark": {"rows": [["Body text", "ink", "surface", "#ECEAE4", "#1C1F26", 13.71, 4.5], ["Secondary text", "muted", "surface", "#A4A9B4", "#1C1F26", 7.0, 4.5], ["Income", "income", "surface", "#72D29C", "#1C1F26", 8.96, 4.5], ["Expense", "expense", "surface", "#ECEAE4", "#1C1F26", 13.71, 4.5], ["Refund", "refund", "surface", "#94B8F2", "#1C1F26", 8.17, 4.5], ["Links, active tab", "brand-ink", "surface", "#F4A3AE", "#1C1F26", 8.4, 4.5], ["Primary button", "on-brand", "brand", "#2A0A10", "#F08C99", 7.76, 4.5], ["Refund tag", "refund", "refund-soft", "#94B8F2", "#1F2A3D", 7.14, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#F4A3AE", "#3A1E24", 7.69, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#1C1F26", 7.9, 4.5], ["Input border", "field", "surface", "#6E7585", "#1C1F26", 3.57, 3], ["Spending bars", "chart-spend", "surface", "#F08C99", "#1C1F26", 7.0, 3], ["Income bars", "chart-income", "surface", "#72D29C", "#1C1F26", 8.96, 3], ["Focus ring", "focus", "surface", "#94B8F2", "#1C1F26", 8.17, 3]], "swatch": {"canvas": "#14161B", "surface": "#1C1F26", "ink": "#ECEAE4", "muted": "#A4A9B4", "brand": "#F08C99", "income": "#72D29C", "expense": "#ECEAE4", "refund": "#94B8F2"}}}, "neem": {"light": {"rows": [["Body text", "ink", "surface", "#0F2420", "#FFFFFF", 16.23, 4.5], ["Secondary text", "muted", "surface", "#4A605A", "#FFFFFF", 6.75, 4.5], ["Income", "income", "surface", "#0A7647", "#FFFFFF", 5.68, 4.5], ["Expense", "expense", "surface", "#0F2420", "#FFFFFF", 16.23, 4.5], ["Refund", "refund", "surface", "#6B3FB8", "#FFFFFF", 6.93, 4.5], ["Links, active tab", "brand-ink", "surface", "#0B6A56", "#FFFFFF", 6.54, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#0B6A56", 6.54, 4.5], ["Refund tag", "refund", "refund-soft", "#6B3FB8", "#EEE7FA", 5.76, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#0B6A56", "#D9F0E8", 5.48, 4.5], ["Errors", "danger-text", "surface", "#B42B2B", "#FFFFFF", 6.32, 4.5], ["Input border", "field", "surface", "#6F918A", "#FFFFFF", 3.45, 3], ["Spending bars", "chart-spend", "surface", "#C2502F", "#FFFFFF", 4.69, 3], ["Income bars", "chart-income", "surface", "#0A7647", "#FFFFFF", 5.68, 3], ["Focus ring", "focus", "surface", "#6B3FB8", "#FFFFFF", 6.93, 3]], "swatch": {"canvas": "#F1F6F4", "surface": "#FFFFFF", "ink": "#0F2420", "muted": "#4A605A", "brand": "#0B6A56", "income": "#0A7647", "expense": "#0F2420", "refund": "#6B3FB8"}}, "dark": {"rows": [["Body text", "ink", "surface", "#E4F1EC", "#15211D", 14.28, 4.5], ["Secondary text", "muted", "surface", "#9CB2AA", "#15211D", 7.39, 4.5], ["Income", "income", "surface", "#62D89E", "#15211D", 9.34, 4.5], ["Expense", "expense", "surface", "#E4F1EC", "#15211D", 14.28, 4.5], ["Refund", "refund", "surface", "#BBA0F2", "#15211D", 7.44, 4.5], ["Links, active tab", "brand-ink", "surface", "#74DEC0", "#15211D", 10.22, 4.5], ["Primary button", "on-brand", "brand", "#05231B", "#56D3B0", 8.98, 4.5], ["Refund tag", "refund", "refund-soft", "#BBA0F2", "#2A2340", 6.67, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#74DEC0", "#173A31", 7.68, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#15211D", 7.94, 4.5], ["Input border", "field", "surface", "#5F8277", "#15211D", 3.9, 3], ["Spending bars", "chart-spend", "surface", "#F0906F", "#15211D", 7.04, 3], ["Income bars", "chart-income", "surface", "#62D89E", "#15211D", 9.34, 3], ["Focus ring", "focus", "surface", "#BBA0F2", "#15211D", 7.44, 3]], "swatch": {"canvas": "#0D1613", "surface": "#15211D", "ink": "#E4F1EC", "muted": "#9CB2AA", "brand": "#56D3B0", "income": "#62D89E", "expense": "#E4F1EC", "refund": "#BBA0F2"}}}, "lamp": {"light": {"rows": [["Body text", "ink", "surface", "#161A22", "#FFFFFF", 17.43, 4.5], ["Secondary text", "muted", "surface", "#535A6A", "#FFFFFF", 6.91, 4.5], ["Income", "income", "surface", "#16764A", "#FFFFFF", 5.64, 4.5], ["Expense", "expense", "surface", "#B33526", "#FFFFFF", 6.08, 4.5], ["Refund", "refund", "surface", "#2357A3", "#FFFFFF", 7.09, 4.5], ["Links, active tab", "brand-ink", "surface", "#7F5300", "#FFFFFF", 6.69, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#7F5300", 6.69, 4.5], ["Refund tag", "refund", "refund-soft", "#2357A3", "#E4ECF8", 5.96, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#7F5300", "#F6ECD8", 5.7, 4.5], ["Errors", "danger-text", "surface", "#B33526", "#FFFFFF", 6.08, 4.5], ["Input border", "field", "surface", "#858C9C", "#FFFFFF", 3.37, 3], ["Spending bars", "chart-spend", "surface", "#C24A3A", "#FFFFFF", 4.84, 3], ["Income bars", "chart-income", "surface", "#16764A", "#FFFFFF", 5.64, 3], ["Focus ring", "focus", "surface", "#2357A3", "#FFFFFF", 7.09, 3]], "swatch": {"canvas": "#F3F4F7", "surface": "#FFFFFF", "ink": "#161A22", "muted": "#535A6A", "brand": "#7F5300", "income": "#16764A", "expense": "#B33526", "refund": "#2357A3"}}, "dark": {"rows": [["Body text", "ink", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Secondary text", "muted", "surface", "#9AA2B4", "#181C26", 6.65, 4.5], ["Income", "income", "surface", "#52C78E", "#181C26", 8.04, 4.5], ["Expense", "expense", "surface", "#F38677", "#181C26", 6.88, 4.5], ["Refund", "refund", "surface", "#86B6F2", "#181C26", 8.1, 4.5], ["Links, active tab", "brand-ink", "surface", "#F2B64F", "#181C26", 9.39, 4.5], ["Primary button", "on-brand", "brand", "#1A1305", "#F2B64F", 10.16, 4.5], ["Refund tag", "refund", "refund-soft", "#86B6F2", "#1C2A40", 6.87, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#F2B64F", "#3A2F18", 7.24, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#181C26", 8.16, 4.5], ["Input border", "field", "surface", "#677088", "#181C26", 3.45, 3], ["Spending bars", "chart-spend", "surface", "#F38677", "#181C26", 6.88, 3], ["Income bars", "chart-income", "surface", "#52C78E", "#181C26", 8.04, 3], ["Focus ring", "focus", "surface", "#86B6F2", "#181C26", 8.1, 3]], "swatch": {"canvas": "#10131A", "surface": "#181C26", "ink": "#E8EAF0", "muted": "#9AA2B4", "brand": "#F2B64F", "income": "#52C78E", "expense": "#F38677", "refund": "#86B6F2"}}}, "roznamcha": {"light": {"rows": [["Body text", "ink", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Secondary text", "muted", "surface", "#596070", "#FFFFFF", 6.3, 4.5], ["Income", "income", "surface", "#1C6B43", "#FFFFFF", 6.49, 4.5], ["Expense", "expense", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Refund", "refund", "surface", "#2A5699", "#FFFFFF", 7.27, 4.5], ["Links, active tab", "brand-ink", "surface", "#7F5300", "#FFFFFF", 6.69, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#7F5300", 6.69, 4.5], ["Refund tag", "refund", "refund-soft", "#2A5699", "#E6EEF9", 6.22, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#7F5300", "#F6ECD8", 5.7, 4.5], ["Errors", "danger-text", "surface", "#A3221B", "#FFFFFF", 7.49, 4.5], ["Input border", "field", "surface", "#7E8799", "#FFFFFF", 3.61, 3], ["Spending bars", "chart-spend", "surface", "#8E1F2F", "#FFFFFF", 8.8, 3], ["Income bars", "chart-income", "surface", "#1C6B43", "#FFFFFF", 6.49, 3], ["Focus ring", "focus", "surface", "#2A5699", "#FFFFFF", 7.27, 3]], "swatch": {"canvas": "#F7F7F4", "surface": "#FFFFFF", "ink": "#1C2230", "muted": "#596070", "brand": "#7F5300", "income": "#1C6B43", "expense": "#1C2230", "refund": "#2A5699"}}, "dark": {"rows": [["Body text", "ink", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Secondary text", "muted", "surface", "#9AA2B4", "#181C26", 6.65, 4.5], ["Income", "income", "surface", "#52C78E", "#181C26", 8.04, 4.5], ["Expense", "expense", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Refund", "refund", "surface", "#86B6F2", "#181C26", 8.1, 4.5], ["Links, active tab", "brand-ink", "surface", "#F2B64F", "#181C26", 9.39, 4.5], ["Primary button", "on-brand", "brand", "#1A1305", "#F2B64F", 10.16, 4.5], ["Refund tag", "refund", "refund-soft", "#86B6F2", "#1C2A40", 6.87, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#F2B64F", "#3A2F18", 7.24, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#181C26", 8.16, 4.5], ["Input border", "field", "surface", "#677088", "#181C26", 3.45, 3], ["Spending bars", "chart-spend", "surface", "#EE8E9A", "#181C26", 7.28, 3], ["Income bars", "chart-income", "surface", "#52C78E", "#181C26", 8.04, 3], ["Focus ring", "focus", "surface", "#86B6F2", "#181C26", 8.1, 3]], "swatch": {"canvas": "#10131A", "surface": "#181C26", "ink": "#E8EAF0", "muted": "#9AA2B4", "brand": "#F2B64F", "income": "#52C78E", "expense": "#E8EAF0", "refund": "#86B6F2"}}}, "roznamcha-neem": {"light": {"rows": [["Body text", "ink", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Secondary text", "muted", "surface", "#596070", "#FFFFFF", 6.3, 4.5], ["Income", "income", "surface", "#3D7417", "#FFFFFF", 5.66, 4.5], ["Expense", "expense", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Refund", "refund", "surface", "#2A5699", "#FFFFFF", 7.27, 4.5], ["Links, active tab", "brand-ink", "surface", "#0B6A56", "#FFFFFF", 6.54, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#0B6A56", 6.54, 4.5], ["Refund tag", "refund", "refund-soft", "#2A5699", "#E6EEF9", 6.22, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#0B6A56", "#D9F0E8", 5.48, 4.5], ["Errors", "danger-text", "surface", "#A3221B", "#FFFFFF", 7.49, 4.5], ["Input border", "field", "surface", "#7E8799", "#FFFFFF", 3.61, 3], ["Spending bars", "chart-spend", "surface", "#8E1F2F", "#FFFFFF", 8.8, 3], ["Income bars", "chart-income", "surface", "#3D7417", "#FFFFFF", 5.66, 3], ["Focus ring", "focus", "surface", "#2A5699", "#FFFFFF", 7.27, 3]], "swatch": {"canvas": "#F7F7F4", "surface": "#FFFFFF", "ink": "#1C2230", "muted": "#596070", "brand": "#0B6A56", "income": "#3D7417", "expense": "#1C2230", "refund": "#2A5699"}}, "dark": {"rows": [["Body text", "ink", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Secondary text", "muted", "surface", "#9AA2B4", "#181C26", 6.65, 4.5], ["Income", "income", "surface", "#9CCF6E", "#181C26", 9.38, 4.5], ["Expense", "expense", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Refund", "refund", "surface", "#86B6F2", "#181C26", 8.1, 4.5], ["Links, active tab", "brand-ink", "surface", "#74DEC0", "#181C26", 10.51, 4.5], ["Primary button", "on-brand", "brand", "#05231B", "#56D3B0", 8.98, 4.5], ["Refund tag", "refund", "refund-soft", "#86B6F2", "#1C2A40", 6.87, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#74DEC0", "#173A31", 7.68, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#181C26", 8.16, 4.5], ["Input border", "field", "surface", "#677088", "#181C26", 3.45, 3], ["Spending bars", "chart-spend", "surface", "#EE8E9A", "#181C26", 7.28, 3], ["Income bars", "chart-income", "surface", "#9CCF6E", "#181C26", 9.38, 3], ["Focus ring", "focus", "surface", "#86B6F2", "#181C26", 8.1, 3]], "swatch": {"canvas": "#10131A", "surface": "#181C26", "ink": "#E8EAF0", "muted": "#9AA2B4", "brand": "#56D3B0", "income": "#9CCF6E", "expense": "#E8EAF0", "refund": "#86B6F2"}}}, "roznamcha-madder": {"light": {"rows": [["Body text", "ink", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Secondary text", "muted", "surface", "#596070", "#FFFFFF", 6.3, 4.5], ["Income", "income", "surface", "#1C6B43", "#FFFFFF", 6.49, 4.5], ["Expense", "expense", "surface", "#1C2230", "#FFFFFF", 15.9, 4.5], ["Refund", "refund", "surface", "#2A5699", "#FFFFFF", 7.27, 4.5], ["Links, active tab", "brand-ink", "surface", "#8E1F2F", "#FFFFFF", 8.8, 4.5], ["Primary button", "on-brand", "brand", "#FFFFFF", "#8E1F2F", 8.8, 4.5], ["Refund tag", "refund", "refund-soft", "#2A5699", "#E6EEF9", 6.22, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#8E1F2F", "#F7E8EA", 7.41, 4.5], ["Errors", "danger-text", "surface", "#A3221B", "#FFFFFF", 7.49, 4.5], ["Input border", "field", "surface", "#7E8799", "#FFFFFF", 3.61, 3], ["Spending bars", "chart-spend", "surface", "#46526B", "#FFFFFF", 7.84, 3], ["Income bars", "chart-income", "surface", "#1C6B43", "#FFFFFF", 6.49, 3], ["Focus ring", "focus", "surface", "#2A5699", "#FFFFFF", 7.27, 3]], "swatch": {"canvas": "#F7F7F4", "surface": "#FFFFFF", "ink": "#1C2230", "muted": "#596070", "brand": "#8E1F2F", "income": "#1C6B43", "expense": "#1C2230", "refund": "#2A5699"}}, "dark": {"rows": [["Body text", "ink", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Secondary text", "muted", "surface", "#9AA2B4", "#181C26", 6.65, 4.5], ["Income", "income", "surface", "#52C78E", "#181C26", 8.04, 4.5], ["Expense", "expense", "surface", "#E8EAF0", "#181C26", 14.16, 4.5], ["Refund", "refund", "surface", "#86B6F2", "#181C26", 8.1, 4.5], ["Links, active tab", "brand-ink", "surface", "#F4A3AE", "#181C26", 8.68, 4.5], ["Primary button", "on-brand", "brand", "#2A0A10", "#F08C99", 7.76, 4.5], ["Refund tag", "refund", "refund-soft", "#86B6F2", "#1C2A40", 6.87, 4.5], ["Selected chip", "brand-ink", "brand-soft", "#F4A3AE", "#3A1E24", 7.69, 4.5], ["Errors", "danger-text", "surface", "#F59C93", "#181C26", 8.16, 4.5], ["Input border", "field", "surface", "#677088", "#181C26", 3.45, 3], ["Spending bars", "chart-spend", "surface", "#A9B4CC", "#181C26", 8.18, 3], ["Income bars", "chart-income", "surface", "#52C78E", "#181C26", 8.04, 3], ["Focus ring", "focus", "surface", "#86B6F2", "#181C26", 8.1, 3]], "swatch": {"canvas": "#10131A", "surface": "#181C26", "ink": "#E8EAF0", "muted": "#9AA2B4", "brand": "#F08C99", "income": "#52C78E", "expense": "#E8EAF0", "refund": "#86B6F2"}}}};
+const DIRS = {
+  bahi: {
+    name: "A · Bahi", tag: "Account book, calm and bookish. Light first.",
+    mood: "Built on the bahi khata, the red cloth-bound account book. White ruled paper, blue-grey rules, a red margin line, a madder-red binding. Serif headings and totals, a plain sans for everything you tap.",
+    fonts: [["Newsreader", '"Newsreader", serif', "Headings, totals", "₹59,566.00 Net"], ["Public Sans", '"Public Sans", sans-serif', "Interface, figures (tabular)", "Weekly groceries · 6:30 pm"]],
+    types: ["Sign on every amount: + or −", "Expenses stay in ink, income green, refunds blue with a Refund tag", "Rows show a plain category icon, like a bank statement", "Charts: income bars hatched, spending solid"],
+    sig: ["Double rule under the Net total, the accounting mark for a final figure", "Red double margin line down the transaction list", "Login page is a ruled ledger with Date / Particulars / ₹ columns"],
+  },
+  neem: {
+    name: "B · Neem", tag: "Fresh and friendly, made for phones. Light first.",
+    mood: "Neem-leaf green on a pale mint canvas. Soft rounded cards, pill buttons and one bold green card for the month's net. Feels like a good UPI app: light, quick, reassuring.",
+    fonts: [["Plus Jakarta Sans 800", '"Plus Jakarta Sans", sans-serif', "Headings, big numbers", "₹59,566.00 Net"], ["Plus Jakarta Sans 500", '"Plus Jakarta Sans", sans-serif', "Interface, figures (tabular)", "Weekly groceries · 6:30 pm"]],
+    types: ["Sign on every amount: + or −", "Expenses in ink, income green, refunds violet with a Refund tag", "Rows show a plain category icon, like a bank statement", "Charts: income hatched green, spending solid terracotta"],
+    sig: ["What's left over is one big number on top, no box around it", "Raised square Add button in the middle of the phone bar", "Each day is its own rounded card"],
+  },
+  lamp: {
+    name: "C · Lamp", tag: "Modern and focused. Dark first.",
+    mood: "A desk lamp over a night-blue desk. Deep blue-grey surfaces, one warm brass accent, monospaced figures so columns of rupees line up. Compact rows and a sidebar on desktop. The daytime light mode keeps the same structure.",
+    fonts: [["IBM Plex Sans", '"IBM Plex Sans", sans-serif', "Headings, interface", "Weekly groceries · 6:30 pm"], ["IBM Plex Mono", '"IBM Plex Mono", monospace', "Every figure", "₹1,12,500.00"]],
+    types: ["Sign on every amount: + or −", "Expenses coral, income green, refunds blue with a Refund tag", "Rows show a plain category icon, like a bank statement", "Charts: income hatched, spending solid; sparklines under each total"],
+    sig: ["Sidebar from 1024px wide, ready for Splits and Settings", "Sparkline under Earned, Spent and Net showing how the month built up", "Mono figures throughout, so ₹1,12,500.00 and ₹360.00 align"],
+  },
+};
+DIRS.roznamcha = {
+  name: "D · Roznamcha", tag: "Bahi and Lamp combined. Dark first.",
+  mood: "Named after the roznamcha, the daybook Indian shopkeepers write every entry in, day by day. Lamp gives the structure: a night-blue desk, one accent colour, the sidebar, compact rows, monospaced figures and sparklines. Bahi gives the hand: serif headings and totals, a double rule under what's left over, a red margin line down every list. Light mode is Bahi's ruled paper. Try the three accents with the Accent switch above the preview. Neem green moves income to a leaf green so money in never looks like a button. Madder moves spending bars to slate so red only means the brand and the ledger margin.",
+  fonts: [["Newsreader", '"Newsreader", serif', "Headings, day names, totals", "Sat, 31 Oct · ₹62,892.00"], ["IBM Plex Sans", '"IBM Plex Sans", sans-serif', "Interface", "Weekly groceries · 6:30 pm"], ["IBM Plex Mono", '"IBM Plex Mono", monospace', "Figures in lists and charts", "−₹1,780.00"]],
+  types: ["Sign on every amount: + or −", "Expenses stay in ink, income green, refunds blue with a Refund tag", "Rows show a plain category icon, like a bank statement", "Charts: income hatched, spending solid"],
+  sig: ["Double rule in the accent colour under Left over, the accounting mark for a final figure", "Red double margin line down every day's list", "Sidebar with a binding edge in the accent colour, ready for Splits and Settings", "Login is a daybook page: Date, Particulars, ₹"],
+};
+const LABELS = { canvas: "Canvas", surface: "Surface", ink: "Text", muted: "Muted", brand: "Brand", income: "Income", expense: "Expense", refund: "Refund" };
+const S = { dir: "roznamcha", screen: "overview", width: "390", theme: "dark", accent: "neem" };
+const tokKey = (id) => (id === "roznamcha" && S.accent !== "brass" ? "roznamcha-" + S.accent : id);
+
+function swatches(sw) {
+  return `<div class="sw-row">${Object.entries(sw).map(([k, v]) => `<div class="sw"><i style="background:${v}"></i><b>${LABELS[k]}</b><span>${v}</span></div>`).join("")}</div>`;
+}
+function table(rows) {
+  return `<div class="tbl"><table><thead><tr><th>Use</th><th>Pair</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead><tbody>${
+    rows.map(([label, a, b, ha, hb, r, need]) => `<tr><td>${label}</td><td><i class="chip" style="background:${ha}"></i>${a} on <i class="chip" style="background:${hb}"></i>${b}</td><td class="num">${r.toFixed(2)}:1</td><td class="num">${need}:1</td><td class="${r >= need ? "pass" : ""}">${r >= need ? "Pass" : "Fail"}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function renderDirs() {
+  document.getElementById("dirs").innerHTML = Object.entries(DIRS).map(([id, d]) => {
+    const t = TOKENS && TOKENS[tokKey(id)];
+    const minT = (m) => Math.min(...t[m].rows.filter((r) => r[6] === 4.5).map((r) => r[5])).toFixed(2);
+    return `<article class="dir" aria-labelledby="h-${id}">
+      <div class="dir-head"><div><h2 id="h-${id}">${d.name}</h2><p class="tag">${d.tag}</p></div><button data-show="${id}">Preview ${d.name.split("· ")[1]}</button></div>
+      <p class="mood">${d.mood}</p>
+      <div class="grid2">
+        <div><h3>Light palette</h3>${t ? swatches(t.light.swatch) : ""}</div>
+        <div><h3>Dark palette</h3>${t ? swatches(t.dark.swatch) : ""}</div>
+      </div>
+      <div class="grid2">
+        <div><h3>Fonts</h3><div class="fonts">${d.fonts.map(([n, f, use, s]) => `<div><div class="sample" style="font-family:${f}">${s}</div><div class="meta">${n}: ${use}</div></div>`).join("")}</div></div>
+        <div><h3>Income, expense, refund</h3><ul class="plain">${d.types.map((x) => `<li>${x}</li>`).join("")}</ul>
+          <h3 style="margin-top:14px">Signature details</h3><ul class="plain">${d.sig.map((x) => `<li>${x}</li>`).join("")}</ul></div>
+      </div>
+      ${t ? `<details><summary>Contrast check (WCAG AA): every pair passes. Lowest text ratio ${minT("light")}:1 light, ${minT("dark")}:1 dark</summary>
+        <div class="grid2"><div><h3 style="margin-top:10px">Light</h3>${table(t.light.rows)}</div><div><h3 style="margin-top:10px">Dark</h3>${table(t.dark.rows)}</div></div></details>` : ""}
+    </article>`;
+  }).join("");
+}
+
+function src() { return `${S.dir}.html#${S.screen}-${S.theme}` + (S.dir === "roznamcha" ? `-${S.accent}` : ""); }
+function renderFrame() {
+  const f = document.getElementById("frame");
+  if (S.width === "390") {
+    f.className = "device";
+    f.style.width = "";
+    f.innerHTML = `<iframe id="ifr" title="${DIRS[S.dir].name} mockup, phone width" src="${src()}"></iframe>`;
+  } else {
+    f.className = "desk";
+    f.innerHTML = `<div class="viewport"><iframe id="ifr" title="${DIRS[S.dir].name} mockup, desktop width" src="${src()}"></iframe></div>`;
+    scaleDesk();
+  }
+  document.getElementById("open").href = src();
+  document.getElementById("ctl-accent").hidden = S.dir !== "roznamcha";
+  document.querySelectorAll(".seg[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", S[g.dataset.k] === b.dataset.v)));
+}
+function scaleDesk() {
+  const vp = document.querySelector(".desk .viewport");
+  if (!vp) return;
+  const k = vp.clientWidth / 1366;
+  vp.style.height = 860 * k + "px";
+  vp.querySelector("iframe").style.transform = `scale(${k})`;
+}
+document.querySelector(".controls").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-v]");
+  if (!b) return;
+  const k = b.closest(".seg").dataset.k;
+  S[k] = b.dataset.v;
+  renderFrame();
+  if (k === "accent") renderDirs();
+});
+document.getElementById("dirs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-show]");
+  if (!b) return;
+  S.dir = b.dataset.show;
+  renderFrame();
+  document.querySelector(".stage").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+});
+addEventListener("resize", scaleDesk);
+renderDirs();
+renderFrame();
+</script>
+</body>
+</html>
