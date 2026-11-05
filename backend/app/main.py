@@ -6,17 +6,18 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.transaction import router as transaction_router
 from app.api.routes.category import router as category_router
 from app.api.routes.analytics import router as analytics_router
+from app.core.config import settings
 from app.core.limiter import limiter
 app = FastAPI(title="LedgerLines", version="0.1.0")
 # Attach the limiter to the application state
 app.state.limiter = limiter
 # Register the exception handler to return a clean 429 response when limits are hit
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-# Add CORS middleware before including routers
-origins = ["http://localhost:3000"]
+# Add CORS middleware before including routers. Origins come from CORS_ORIGINS; the
+# frontend's own /api proxy is same-origin and doesn't need an entry
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]

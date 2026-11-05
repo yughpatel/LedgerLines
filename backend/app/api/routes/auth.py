@@ -152,7 +152,7 @@ def logout_user(
 ):
     # If no refresh token cookie exists, clear the cookie using the exact matching path scope
     if not refresh_token:
-        response.delete_cookie(key="refresh_token", path="/auth")
+        response.delete_cookie(key="refresh_token", path=settings.refresh_cookie_path)
         return {"detail": "Successfully logged out"}
 
     try:
@@ -170,15 +170,13 @@ def logout_user(
     # Clear the refresh token cookie from the browser using the exact matching path scope
     response.delete_cookie(
         key="refresh_token",
-        path="/auth"
+        path=settings.refresh_cookie_path
     )
 
     return {"detail": "Successfully logged out"}
 
 
 def set_refresh_cookie(response: Response, raw_token: str, expires_at: datetime | None = None) -> None:
-    # Determine cookie security based on environment setting
-    is_production = settings.environment == "production"
 
     # The cookie should die with the token inside it. A rotated token keeps the
     # original expiry, so after a refresh that's less than the full lifetime
@@ -187,13 +185,14 @@ def set_refresh_cookie(response: Response, raw_token: str, expires_at: datetime 
     else:
         max_age = int((expires_at - datetime.now(timezone.utc)).total_seconds())
 
-    # Set refresh token as an HTTP-only cookie scoped to /auth
+    # HTTP-only, and scoped to the auth routes as the browser addresses them
+    # (/api/auth behind the frontend's proxy), so no other request carries it
     response.set_cookie(
         key="refresh_token",
         value=raw_token,
         httponly=True,
-        secure=is_production,
+        secure=settings.is_production,
         samesite="lax",
         max_age=max_age,
-        path="/auth"
+        path=settings.refresh_cookie_path
     )
