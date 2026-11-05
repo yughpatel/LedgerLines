@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:8000";
+// Same-origin by default: /api is forwarded to the backend by the Vite dev server
+// (vite.config.js) and by a Vercel rewrite in production, so the refresh cookie
+// stays first-party. VITE_API_BASE_URL overrides it, e.g. to call an API directly
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
 
 // App wires this once. Called with a new access token after a successful
 // silent refresh, or with null when refresh failed / we've lost auth.
