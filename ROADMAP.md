@@ -36,12 +36,12 @@ Deployment comes before splitting because a live, tested app is a stronger portf
 
 - [x] Pin Python 3.14: `py -3.14 -m venv venv` in the README setup and a `.python-version` file at the repo root, which Render reads (3.15 is the `py` launcher default on the dev machine, and the project is untested on it). CI should read the same file when it's added
 - [x] Add `email-validator` to `requirements.txt` (needed by `EmailStr`; a fresh install crashes on import without it)
-- [ ] Frontend API base URL from a Vite env var instead of hard-coded `http://localhost:8000`
-- [ ] Refresh cookie `path` configurable (needed if the API is proxied under `/api`)
-- [ ] CORS origins from an env var (currently hard-coded to `http://localhost:3000`)
-- [ ] Refresh cookie that works between the frontend and the API (currently `samesite=lax`; needs same-site domains or a different design)
+- [x] Frontend API base URL from a Vite env var instead of hard-coded `http://localhost:8000`: defaults to same-origin `/api`, which the Vite dev proxy (and later the Vercel rewrite) forwards to the backend; `VITE_API_BASE_URL` overrides it
+- [x] Refresh cookie `path` configurable (`REFRESH_COOKIE_PATH`, default `/api/auth` for the proxy)
+- [x] CORS origins from an env var (`CORS_ORIGINS`, comma-separated)
+- [ ] Refresh cookie that works between the frontend and the API. Decided: the frontend proxies `/api/*` to the API (Vite in development, a Vercel rewrite in production), so the cookie stays first-party and `samesite=lax` keeps working. Works locally; done when the Vercel rewrite is live
 - [ ] Rate limiter that sees the real client IP behind the proxy (currently `get_remote_address`)
-- [ ] Per-environment settings
+- [x] Per-environment settings: `ENVIRONMENT` is `development`, `test` or `production` (a typo fails at startup), and production refuses short or shared secrets and wildcard or non-https CORS origins
 - [x] CI (GitHub Actions: backend pytest against a Postgres service, frontend lint and build)
 - [x] `.env.example`
 - [ ] Secrets in each platform's env settings

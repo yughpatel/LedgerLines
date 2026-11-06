@@ -202,7 +202,9 @@ Copy-Item .env.example .env
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
 | `REFRESH_TOKEN_SECRET_KEY` | Signs refresh tokens (separate from `SECRET_KEY`) |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime |
-| `ENVIRONMENT` | Optional, defaults to `development`. `production` makes the refresh cookie `Secure`. |
+| `ENVIRONMENT` | Optional: `development` (default), `test` or `production`; anything else fails at startup. `production` makes the refresh cookie `Secure` and refuses to start with secrets under 32 characters, the two secrets equal, or `CORS_ORIGINS` that are `*` or not `https://`. |
+| `CORS_ORIGINS` | Optional, comma-separated, defaults to `http://localhost:3000`. Origins allowed to call the API directly from a browser. The frontend's `/api` proxy is same-origin and needs no entry, so production can leave it empty. |
+| `REFRESH_COOKIE_PATH` | Optional, defaults to `/api/auth`: the auth routes as the browser sees them through the `/api` proxy. Use `/auth` only if the browser calls the API directly. |
 
 Names are not case sensitive (pydantic-settings default).
 
@@ -262,7 +264,8 @@ cd frontend
 npm run dev
 ```
 
-- App: `http://localhost:3000` (fixed port; the backend CORS config only allows this origin)
+- App: `http://localhost:3000` (fixed port)
+- The app calls the API at `/api`, and the Vite dev server forwards those calls to `http://localhost:8000` without the `/api` prefix, the same way Vercel will in production. So the browser only ever talks to one origin and the refresh cookie (`Path=/api/auth`) is first-party. Set `API_PROXY_TARGET` to forward somewhere else, or `VITE_API_BASE_URL` (see `frontend/.env.example`) to skip the proxy.
 
 ---
 
@@ -318,7 +321,7 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 - Passwords are hashed with bcrypt (`pwdlib`). Signup requires 8 to 20 characters with an uppercase letter, a digit and a special character.
 - **Access token:** JWT signed with `SECRET_KEY`, contains `sub` (user id), `type: "access"` and `ver` (the user's `token_version`), expires after `ACCESS_TOKEN_EXPIRE_MINUTES`. The frontend keeps it in `localStorage` and sends it as a Bearer token.
 - **Refresh token:** JWT signed with `REFRESH_TOKEN_SECRET_KEY`, `type: "refresh"`, a random `jti`, expires after `REFRESH_TOKEN_EXPIRE_DAYS`. Only its SHA-256 digest is stored, in `refresh_tokens` (unique, looked up directly by index).
-- **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/auth`, `Secure` only when `ENVIRONMENT=production`.
+- **Cookie:** `refresh_token`, `httpOnly`, `SameSite=Lax`, `Path=/api/auth` (set by `REFRESH_COOKIE_PATH`; the browser reaches `/auth/*` through the `/api` proxy), `Secure` only when `ENVIRONMENT=production`.
 - **Refresh flow:** on a 401, the frontend calls `POST /auth/refresh` once (shared between parallel requests) and retries the request with the new access token. If refresh fails, the user is logged out.
 - **Rotation:** each `/auth/refresh` revokes the presented token and sets a new one in the cookie, keeping the original expiry, so a session ends `REFRESH_TOKEN_EXPIRE_DAYS` after login. The row is locked while it's read, so two refreshes of the same token take turns.
 - **Reuse detection:** a rotated token presented again more than 10 seconds later means someone else has a copy, so every refresh token of that user is revoked and `token_version` is incremented. Within 10 seconds (two tabs sharing one cookie), it gets an access token and no new cookie, but only while its replacement is still active, so it can't undo a logout. A token revoked by logout just gets a 401.
@@ -402,7 +405,8 @@ pytest
 Not deployed yet. This is Phase 2 in [ROADMAP.md](ROADMAP.md):
 
 - Frontend on Vercel, backend on Render, database on Supabase
-- Before going live: CORS origins from env, a refresh cookie that works across the frontend and API domains, real client IPs for rate limiting behind the proxy, CI, secrets in each platform's settings, monitoring and a load test
+- The frontend reaches the API through a Vercel rewrite of `/api/*`, so the refresh cookie stays first-party (`*.vercel.app` and `*.onrender.com` are different sites, and a `SameSite=Lax` cookie wouldn't cross between them)
+- Before going live: real client IPs for rate limiting behind the proxy, the Vercel rewrite, secrets in each platform's settings, monitoring and a load test
 
 ---
 
@@ -426,10 +430,10 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - Expired `refresh_tokens` rows are deleted only when that user logs in again
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
-- CORS allows only `http://localhost:3000` (hard-coded)
-- Category analytics are all-time only, with no date filters. The trend chart shows only the current month (no month picker yet).
+- The summary and category analytics accept a month, but the frontend still shows only the current month and all-time categories (no month picker until the redesign)
 - All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
-- A refund recorded under a different category than the purchase skews per-category spending- One account per user, so there is no "amount cannot exceed balance" check
+- A refund recorded under a different category than the purchase skews per-category spending
+- One account per user, so there is no "amount cannot exceed balance" check
 
 ---
 
