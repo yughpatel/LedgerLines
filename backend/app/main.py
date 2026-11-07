@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from app.core.errors import validation_error_without_input
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -30,6 +32,8 @@ app.include_router(transaction_router)
 app.include_router(category_router)
 # Include all analytics routes
 app.include_router(analytics_router)
+# Validation errors without the rejected values, so a password is never echoed back
+app.add_exception_handler(RequestValidationError, validation_error_without_input)
 @app.get("/")
 async def root():
     return {"message": "LedgerLines API is running"}
