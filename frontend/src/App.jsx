@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Auth from "./components/Auth";
 import TransactionList from "./components/TransactionList";
 import { getMe, logout as apiLogout, setOnAuthChange } from "./api";
-import "./App.css";
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("ll_token"));

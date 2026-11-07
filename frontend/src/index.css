@@ -62,9 +62,9 @@
   --color-danger-soft: #3A1D1B;
 
   /* Type: serif for headings, day names and totals; sans for the interface;
-     mono for figures in lists and charts. Loading the faces is step 1 of the plan;
-     until then the fallbacks render. */
-  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+     mono for figures in lists and charts. Loaded in main.jsx from @fontsource.
+     */
+  --font-serif: "Newsreader Variable", "Newsreader", "Iowan Old Style", Georgia, serif;
   --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --text-page: 1.75rem;           /* page title, phone */
