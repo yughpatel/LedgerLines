@@ -98,7 +98,7 @@
   --animate-menu-out: menu-out 0.12s ease-in both;
   --animate-flash: flash 2s ease-out;                           /* a row just added or saved */
   --animate-shake: shake 0.36s ease;                            /* a field that failed */
-  --animate-draw: draw 1.1s 0.15s var(--ease-soft) forwards;    /* sparklines, pathLength="1" */
+  --animate-draw: draw 1.1s 0.15s var(--ease-soft) both;    /* sparklines, pathLength="1" */
   --animate-slide-from-right: slide-from-right 0.32s var(--ease-soft); /* month label, going forward */
   --animate-slide-from-left: slide-from-left 0.32s var(--ease-soft);   /* month label, going back */
 

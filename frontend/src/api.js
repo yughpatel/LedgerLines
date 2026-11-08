@@ -128,16 +128,22 @@ export function getTransactions(token) {
   return request("/transactions", { token });
 }
 
-export function getSummary(token) {
-  return request("/transactions/summary", { token });
+// Optional { year, month } (an IST calendar month). Without it the summary is the
+// current month and the category endpoints are all-time
+function periodQuery(period) {
+  return period ? `?${new URLSearchParams({ year: period.year, month: period.month })}` : "";
 }
 
-export function getSpendingByCategory(token) {
-  return request("/analytics/spending-by-category", { token });
+export function getSummary(token, period) {
+  return request(`/transactions/summary${periodQuery(period)}`, { token });
 }
 
-export function getIncomeByCategory(token) {
-  return request("/analytics/income-by-category", { token });
+export function getSpendingByCategory(token, period) {
+  return request(`/analytics/spending-by-category${periodQuery(period)}`, { token });
+}
+
+export function getIncomeByCategory(token, period) {
+  return request(`/analytics/income-by-category${periodQuery(period)}`, { token });
 }
 
 export function getTrend(token, { year, month, bucket }) {

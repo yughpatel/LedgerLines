@@ -1,25 +1,58 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Auth from "./components/Auth";
+import OverviewPage from "./components/OverviewPage";
 import Shell from "./components/Shell";
+import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
-import { getMe, logout as apiLogout, setOnAuthChange } from "./api";
+import { getMe, getTransactions, logout as apiLogout, setOnAuthChange } from "./api";
+import { currentPeriod } from "./format";
 import { useHashPage, useTheme } from "./hooks";
 
-// The signed-in app: navigation, theme and the page. Its own component so its hooks
-// don't depend on the auth checks above them
+// The signed-in app: navigation, theme, the chosen month, the transaction list and
+// the add/edit form. Its own component so its hooks don't depend on the auth checks
 function Workspace({ token, userEmail, onLogout }) {
   const [page, go] = useHashPage();
   const [theme, toggleTheme] = useTheme();
-  const [addSignal, setAddSignal] = useState(0);
+  const [period, setPeriod] = useState(currentPeriod);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [form, setForm] = useState(null); // null, { transaction: null } to add, or { transaction } to edit
+
+  useEffect(() => {
+    let cancelled = false;
+    getTransactions(token)
+      .then((data) => { if (!cancelled) setTransactions(Array.isArray(data) ? data : []); })
+      .catch(() => { /* the pages show their own errors */ });
+    return () => { cancelled = true; };
+  }, [token, refreshKey]);
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const openAdd = () => setForm({ transaction: null });
+  const openEdit = (transaction) => setForm({ transaction });
 
   return (
     <Shell
       page={page}
       onNavigate={go}
-      onAdd={() => setAddSignal((n) => n + 1)}
+      onAdd={openAdd}
       account={{ email: userEmail, theme, onToggleTheme: toggleTheme, onLogout }}
     >
-      <TransactionList token={token} userEmail={userEmail} onLogout={onLogout} embedded addSignal={addSignal} />
+      {page === "overview" ? (
+        <OverviewPage
+          token={token} period={period} onPeriodChange={setPeriod} refreshKey={refreshKey}
+          transactions={transactions} onEdit={openEdit} onAdd={openAdd}
+          onSeeAll={() => go("transactions")} theme={theme}
+        />
+      ) : (
+        <TransactionList key={refreshKey} token={token} userEmail={userEmail} onLogout={onLogout} embedded />
+      )}
+      {form && (
+        <TransactionForm
+          token={token} transaction={form.transaction}
+          onClose={() => setForm(null)}
+          onSaved={() => { setForm(null); refresh(); }}
+        />
+      )}
     </Shell>
   );
 }

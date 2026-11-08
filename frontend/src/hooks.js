@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const PAGES = ["overview", "transactions"];
 
@@ -90,3 +90,31 @@ export function useActiveRect(containerRef, activeKey) {
 
 export const prefersReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// A number that counts from its previous value to a new one (650ms, easing out),
+// in whole rupees while moving and exact at the end. The first value shows at once,
+// and reduced motion skips the count
+export function useCountUp(value) {
+  const target = Number(value) || 0;
+  const [shown, setShown] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    const start = from.current;
+    from.current = target;
+    if (start === target || prefersReducedMotion()) {
+      setShown(target);
+      return;
+    }
+    const t0 = performance.now();
+    let frame;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / 650);
+      const eased = 1 - (1 - p) ** 3;
+      setShown(p < 1 ? Math.round(start + (target - start) * eased) : target);
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
+  return shown;
+}
