@@ -35,7 +35,10 @@ function formatAmount(amount) {
   });
 }
 
-export default function TransactionList({ token, userEmail, onLogout }) {
+// Temporary bridge while the redesign lands: inside the new Shell (embedded) the
+// old header is hidden and the Shell's Add buttons open this form via addSignal.
+// Replaced by the Overview and Transactions pages in the next steps
+export default function TransactionList({ token, userEmail, onLogout, embedded = false, addSignal = 0 }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,6 +64,10 @@ export default function TransactionList({ token, userEmail, onLogout }) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [token]);
+
+  useEffect(() => {
+    if (addSignal > 0) { setEditing(null); setFormOpen(true); }
+  }, [addSignal]);
 
   function openAdd() {
     setEditing(null);
@@ -99,8 +106,8 @@ export default function TransactionList({ token, userEmail, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+    <div className={embedded ? "" : "min-h-screen bg-slate-50"}>
+      {!embedded && <header className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-800">LedgerLines</h1>
@@ -116,9 +123,9 @@ export default function TransactionList({ token, userEmail, onLogout }) {
             Log out
           </button>
         </div>
-      </header>
+      </header>}
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <main className={embedded ? "" : "max-w-6xl mx-auto px-4 sm:px-6 py-6"}>
         <MonthlySummary token={token} refreshKey={summaryVersion} onPeriod={setPeriod} />
         <TrendChart token={token} period={period} refreshKey={summaryVersion} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

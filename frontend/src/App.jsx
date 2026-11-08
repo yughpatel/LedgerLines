@@ -1,7 +1,28 @@
 import { useEffect, useState } from "react";
 import Auth from "./components/Auth";
+import Shell from "./components/Shell";
 import TransactionList from "./components/TransactionList";
 import { getMe, logout as apiLogout, setOnAuthChange } from "./api";
+import { useHashPage, useTheme } from "./hooks";
+
+// The signed-in app: navigation, theme and the page. Its own component so its hooks
+// don't depend on the auth checks above them
+function Workspace({ token, userEmail, onLogout }) {
+  const [page, go] = useHashPage();
+  const [theme, toggleTheme] = useTheme();
+  const [addSignal, setAddSignal] = useState(0);
+
+  return (
+    <Shell
+      page={page}
+      onNavigate={go}
+      onAdd={() => setAddSignal((n) => n + 1)}
+      account={{ email: userEmail, theme, onToggleTheme: toggleTheme, onLogout }}
+    >
+      <TransactionList token={token} userEmail={userEmail} onLogout={onLogout} embedded addSignal={addSignal} />
+    </Shell>
+  );
+}
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("ll_token"));
@@ -71,7 +92,7 @@ export default function App() {
 
   if (validating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
+      <div className="flex min-h-full items-center justify-center text-muted" role="status">
         Loading…
       </div>
     );
@@ -79,5 +100,5 @@ export default function App() {
   if (!token) {
     return <Auth onLogin={handleLogin} />;
   }
-  return <TransactionList token={token} userEmail={userEmail} onLogout={handleLogout} />;
+  return <Workspace token={token} userEmail={userEmail} onLogout={handleLogout} />;
 }
