@@ -1,34 +1,77 @@
 import { useCallback, useEffect, useState } from "react";
 import Auth from "./components/Auth";
+import ConfirmDialog from "./components/ConfirmDialog";
 import OverviewPage from "./components/OverviewPage";
 import Shell from "./components/Shell";
+import Toast from "./components/Toast";
 import TransactionForm from "./components/TransactionForm";
-import TransactionList from "./components/TransactionList";
-import { getMe, getTransactions, logout as apiLogout, setOnAuthChange } from "./api";
-import { currentPeriod } from "./format";
-import { useHashPage, useTheme } from "./hooks";
+import TransactionsPage from "./components/TransactionsPage";
+import { deleteTransaction, getMe, getTransactions, logout as apiLogout, setOnAuthChange } from "./api";
+import { currentPeriod, formatINR, shortDate } from "./format";
+import { prefersReducedMotion, useHashPage, useTheme } from "./hooks";
 
-// The signed-in app: navigation, theme, the chosen month, the transaction list and
-// the add/edit form. Its own component so its hooks don't depend on the auth checks
+// The signed-in app: navigation, theme, the chosen month (shared by both pages), the
+// transaction list, the add/edit form, delete and the toast. Its own component so its
+// hooks don't depend on the auth checks in App
 function Workspace({ token, userEmail, onLogout }) {
   const [page, go] = useHashPage();
   const [theme, toggleTheme] = useTheme();
   const [period, setPeriod] = useState(currentPeriod);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [transactions, setTransactions] = useState([]);
+  const [list, setList] = useState({ items: [], loading: true, error: "" });
   const [form, setForm] = useState(null); // null, { transaction: null } to add, or { transaction } to edit
+  const [confirm, setConfirm] = useState(null); // { tx, busy, error }
+  const [leavingId, setLeavingId] = useState(null);
+  const [flashId, setFlashId] = useState(null);
+  const [toast, setToast] = useState(null); // { message, id }
 
   useEffect(() => {
     let cancelled = false;
+    setList((l) => ({ ...l, loading: true, error: "" }));
     getTransactions(token)
-      .then((data) => { if (!cancelled) setTransactions(Array.isArray(data) ? data : []); })
-      .catch(() => { /* the pages show their own errors */ });
+      .then((data) => { if (!cancelled) setList({ items: Array.isArray(data) ? data : [], loading: false, error: "" }); })
+      .catch((err) => { if (!cancelled) setList((l) => ({ ...l, loading: false, error: err.message || "Couldn't load transactions." })); });
     return () => { cancelled = true; };
   }, [token, refreshKey]);
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const say = (message) => setToast({ message, id: Date.now() });
+  const clearToast = useCallback(() => setToast(null), []);
   const openAdd = () => setForm({ transaction: null });
   const openEdit = (transaction) => setForm({ transaction });
+
+  function onSaved(saved, wasEdit) {
+    setForm(null);
+    // Show the month the entry landed in, and flash it once in the list
+    if (saved?.transaction_date) setPeriod(currentPeriodOf(saved.transaction_date));
+    if (saved?.id) {
+      setFlashId(saved.id);
+      setTimeout(() => setFlashId(null), 2100);
+    }
+    refresh();
+    say(wasEdit ? "Saved" : "Added");
+  }
+
+  async function confirmDelete() {
+    const { tx } = confirm;
+    setConfirm((c) => ({ ...c, busy: true, error: "" }));
+    try {
+      await deleteTransaction(token, tx.id);
+    } catch (err) {
+      setConfirm((c) => ({ ...c, busy: false, error: err.message || "Couldn't delete it. Try again." }));
+      return;
+    }
+    setConfirm(null);
+    setForm(null);
+    // Fold the row away, then drop it and refresh the totals
+    setLeavingId(tx.id);
+    setTimeout(() => {
+      setList((l) => ({ ...l, items: l.items.filter((t) => t.id !== tx.id) }));
+      setLeavingId(null);
+      refresh();
+      say("Deleted");
+    }, prefersReducedMotion() ? 0 : 270);
+  }
 
   return (
     <Shell
@@ -40,21 +83,40 @@ function Workspace({ token, userEmail, onLogout }) {
       {page === "overview" ? (
         <OverviewPage
           token={token} period={period} onPeriodChange={setPeriod} refreshKey={refreshKey}
-          transactions={transactions} onEdit={openEdit} onAdd={openAdd}
+          transactions={list.items} onEdit={openEdit} onAdd={openAdd}
           onSeeAll={() => go("transactions")} theme={theme}
         />
       ) : (
-        <TransactionList key={refreshKey} token={token} userEmail={userEmail} onLogout={onLogout} embedded />
+        <TransactionsPage
+          transactions={list.items} loading={list.loading} error={list.error}
+          period={period} onPeriodChange={setPeriod}
+          onEdit={openEdit} onDelete={(tx) => setConfirm({ tx, busy: false, error: "" })} onAdd={openAdd}
+          flashId={flashId} leavingId={leavingId}
+        />
       )}
       {form && (
         <TransactionForm
           token={token} transaction={form.transaction}
           onClose={() => setForm(null)}
-          onSaved={() => { setForm(null); refresh(); }}
+          onSaved={(saved) => onSaved(saved, Boolean(form.transaction))}
         />
       )}
+      {confirm && (
+        <ConfirmDialog
+          title="Delete this transaction?"
+          body={`${confirm.tx.description || confirm.tx.category.name}, ${formatINR(confirm.tx.amount)} on ${shortDate(confirm.tx.transaction_date)}. You can't undo this.`}
+          confirmLabel="Delete" busy={confirm.busy} error={confirm.error}
+          onConfirm={confirmDelete} onCancel={() => setConfirm(null)}
+        />
+      )}
+      {toast && <Toast message={toast.message} id={toast.id} onDone={clearToast} />}
     </Shell>
   );
+}
+
+// The IST month an instant falls in
+function currentPeriodOf(value) {
+  return currentPeriod(new Date(value));
 }
 
 export default function App() {

@@ -15,13 +15,19 @@ function RefundTag() {
 // One transaction. The whole row opens Edit; on wider screens it also shows the
 // category and time columns and Edit / Delete buttons. Never shown by colour alone:
 // a + or − sign on every amount, a Refund tag, and the type word for screen readers
-export default function TxRow({ tx, onEdit, onDelete, compact = false, flash = false, style }) {
+export default function TxRow({ tx, onEdit, onDelete, compact = false, flash = false, leaving = false, style }) {
   const title = tx.description || tx.category.name;
   const word = TYPE_WORD[tx.type];
   const time = timeLabel(tx.transaction_date);
 
   return (
-    <li className={`flex items-center border-t border-line first:border-t-0 ${flash ? "animate-flash" : ""}`} style={style}>
+    // A row being deleted folds its height away, so the list closes the gap smoothly
+    <li
+      className={`flex max-h-40 items-center overflow-hidden border-t border-line first:border-t-0 ${
+        leaving ? "animate-fold" : flash ? "animate-flash" : "animate-fade-up"
+      }`}
+      style={style}
+    >
       <button
         type="button" onClick={() => onEdit(tx)}
         aria-label={`${title}, ${word} ${formatTxAmount(tx)}, ${tx.category.name}, ${dayLabel(tx.transaction_date)} ${time}. Edit`}
