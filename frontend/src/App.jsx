@@ -99,6 +99,7 @@ function Workspace({ token, userEmail, onLogout }) {
           token={token} transaction={form.transaction}
           onClose={() => setForm(null)}
           onSaved={(saved) => onSaved(saved, Boolean(form.transaction))}
+          onDelete={(tx) => setConfirm({ tx, busy: false, error: "" })}
         />
       )}
       {confirm && (
