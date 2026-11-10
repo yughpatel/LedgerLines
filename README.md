@@ -56,7 +56,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
 - **Monthly summary:** total earned, total spent and net for one calendar month in IST (the current month unless `year` and `month` are given) (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
 - **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
-- **Frontend:** login and signup, transaction table, add/edit form (with inline category creation), delete confirmation, monthly summary cards, a daily/weekly income and spending chart for the current month, and spending-by-category and income-by-category charts. The summary and charts refresh after every create, edit or delete.
+- **Frontend:** two pages, Overview and Transactions, with a sidebar on desktop and a bottom bar on phones, and one month picker that drives every number. Overview has the month's earned, spent and left-over totals, a daily or weekly income and spending chart, recent rows, and spending and income by category. Transactions groups the month by day, with search, type and category filters. Adding or editing happens in a bottom sheet on phones (with inline category creation) and deleting asks first. Dark first with a light theme, works from 390px wide, and passes an axe-core WCAG 2.1 AA scan. Design: [design/build-plan.md](design/build-plan.md).
 
 ### Planned
 
@@ -430,7 +430,6 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 - Expired `refresh_tokens` rows are deleted only when that user logs in again
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
-- The summary and category analytics accept a month, but the frontend still shows only the current month and all-time categories (no month picker until the redesign)
 - All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
 - A refund recorded under a different category than the purchase skews per-category spending
 - One account per user, so there is no "amount cannot exceed balance" check

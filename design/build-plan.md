@@ -4,7 +4,7 @@ Direction: **Roznamcha with the neem green accent**. Dark first, light mode is r
 Reference: `design/mockups/roznamcha.html#overview-dark-neem` (open `design/mockups/index.html` for every screen and width).
 Tokens: `frontend/src/index.css` (`@theme static`). Use the token utilities (`bg-surface`, `text-muted`, `border-field`, `font-serif`, `rounded-card`, `animate-sheet-up`) instead of Tailwind's slate and blue, and instead of `dark:` variants. The tokens already switch with the theme.
 
-Each step below is one pull request. The app keeps working after every step.
+**Status: steps 1 to 7 are built.** Each step is its own commit. Steps 2 to 4 land together, because the shell shows the old dashboard until the new pages replace it.
 
 ## Before step 1: decisions and backend changes
 
