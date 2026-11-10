@@ -120,7 +120,7 @@ export default function TrendCard({ period, daily, weekly, theme }) {
         </div>
       ) : (
         <div
-          tabIndex={0}
+          tabIndex={0} role="group"
           aria-label={`Chart of income and spending. Use the left and right arrow keys to read each ${isWeek ? "week" : "day"}.`}
           onKeyDown={(e) => {
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
