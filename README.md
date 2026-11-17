@@ -4,6 +4,8 @@ A personal finance tracker. Log income, expenses and refunds, see a monthly summ
 
 Built as a full-stack project with a focus on backend engineering, security and production readiness.
 
+![The Overview page in dark mode, showing October's earned, spent and left-over totals, a daily income and spending chart, recent transactions, and spending and income by category](docs/overview.png)
+
 ---
 
 ## Table of Contents
@@ -36,8 +38,8 @@ LedgerLines lets a user:
 - Sign up and log in (JWT access token plus a refresh token in an httpOnly cookie)
 - Record transactions as `CREDIT` (income), `DEBIT` (spending) or `REFUND` (money back on a purchase)
 - Use built-in categories or create their own
-- See this month's total earned, total spent and net
-- See all-time spending by category as a bar chart
+- Pick any month and see its total earned, total spent and net
+- See that month's daily or weekly income and spending, and where the money went by category
 
 The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwind**, built with Vite. It is a solo project by a first-year B.Tech CSE student focused on backend development and cybersecurity.
 
@@ -54,7 +56,7 @@ The backend is **FastAPI** with **PostgreSQL**. The frontend is **React + Tailwi
   - Each listed transaction gets a per-user sequence number (`seq_number`, from `ROW_NUMBER()`)
 - **Categories:** system defaults (Food, Rent, Travel, Utilities, Other) plus custom categories, unique per user ignoring case. Custom categories can be deleted if no transaction uses them.
 - **Monthly summary:** total earned, total spent and net for one calendar month in IST (the current month unless `year` and `month` are given) (`Asia/Kolkata`, set by `REPORTING_TIMEZONE` in `core/config.py`), in one SQL query
-- **Analytics:** all-time spending by category and income by category, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
+- **Analytics:** spending by category and income by category, for one IST calendar month or all time, biggest first, with stable ordering for ties, plus a daily or weekly income and spending trend for one IST calendar month
 - **Refunds:** a `REFUND` reduces spending in the summary and the category breakdown, and is not counted as income
 - **Frontend:** two pages, Overview and Transactions, with a sidebar on desktop and a bottom bar on phones, and one month picker that drives every number. Overview has the month's earned, spent and left-over totals, a daily or weekly income and spending chart, recent rows, and spending and income by category. Transactions groups the month by day, with search, type and category filters. Adding or editing happens in a bottom sheet on phones (with inline category creation) and deleting asks first. Dark first with a light theme, works from 390px wide, and passes an axe-core WCAG 2.1 AA scan. Design: [design/build-plan.md](design/build-plan.md).
 
@@ -110,7 +112,8 @@ LedgerLines/
 │   │   │   └── analytics.py         # Spending and income by category
 │   │   ├── auth/security.py         # Password hashing, JWTs, current user, refresh token checks
 │   │   ├── core/
-│   │   │   ├── config.py            # Settings from env / .env
+│   │   │   ├── config.py            # Settings from env / .env, production checks
+│   │   │   ├── errors.py            # Validation errors without the rejected values
 │   │   │   └── limiter.py           # Shared slowapi Limiter
 │   │   ├── db/session.py            # Engine, session, get_db
 │   │   ├── models/                  # user, transaction, category, refresh_token
@@ -118,6 +121,7 @@ LedgerLines/
 │   │   └── services/
 │   │       ├── analytics.py         # Category aggregation queries
 │   │       ├── category.py          # Category access checks
+│   │       ├── period.py            # Shared month rules and IST month ranges
 │   │       └── transaction.py       # Transaction list with seq_number
 │   ├── alembic/versions/            # Migrations
 │   ├── tests/                       # pytest suite (conftest, factories, test_*.py)
@@ -129,17 +133,28 @@ LedgerLines/
 ├── frontend/
 │   ├── src/
 │   │   ├── api.js                   # API client, 401 refresh interceptor
-│   │   ├── format.js                # Money formatting from decimal strings, date parsing
-│   │   ├── App.jsx
+│   │   ├── format.js                # Money and IST date formatting
+│   │   ├── hooks.js                 # Page hash, theme, count-up and other shared hooks
+│   │   ├── index.css                # Design tokens (Tailwind @theme), dark and light
+│   │   ├── main.jsx                 # Entry, font imports
+│   │   ├── App.jsx                  # Auth gate, page and month state
 │   │   └── components/
-│   │       ├── Auth.jsx
-│   │       ├── TransactionList.jsx  # Dashboard layout
-│   │       ├── TransactionForm.jsx
-│   │       ├── MonthlySummary.jsx
-│   │       ├── TrendChart.jsx       # Daily/weekly income and spending bars
-│   │       └── CategoryBreakdown.jsx # Spending and income by category
+│   │       ├── Shell.jsx            # Sidebar, top tabs and bottom bar
+│   │       ├── AccountMenu.jsx      # Email, theme switch, log out
+│   │       ├── MonthPicker.jsx
+│   │       ├── OverviewPage.jsx     # Totals, recent rows, category bars
+│   │       ├── TrendCard.jsx        # Daily/weekly income and spending chart
+│   │       ├── TransactionsPage.jsx # Day groups, search and filters
+│   │       ├── TxRow.jsx            # One transaction row (shared)
+│   │       ├── TransactionForm.jsx  # Add/edit bottom sheet or dialog
+│   │       ├── ConfirmDialog.jsx
+│   │       ├── Toast.jsx
+│   │       ├── Auth.jsx             # Login and sign up
+│   │       └── icons.jsx
 │   ├── package.json
 │   └── vite.config.js
+├── design/                          # Mockups and the frontend build plan
+├── docs/                            # README images
 ├── ROADMAP.md
 └── README.md
 ```
@@ -152,7 +167,7 @@ LedgerLines/
 - **Node.js:** `^20.19.0` or `>=22.12.0` (required by Vite 8)
 - **PostgreSQL:** 15 or newer (the category index uses `NULLS NOT DISTINCT`). Developed against PostgreSQL 18.
 - **Git**
-- Windows 11 + PowerShell. All commands below are PowerShell.
+- Commands below are for Windows PowerShell. On macOS or Linux, use `python3.14 -m venv venv` and `source venv/bin/activate` instead of `py -3.14 -m venv venv` and `.\venv\Scripts\Activate.ps1`, `cp` instead of `Copy-Item`, and `/` instead of `\` in paths.
 
 ---
 
@@ -338,6 +353,9 @@ The two category endpoints return `category_id`, `category_name` and `total`, so
 - **Hashed refresh tokens:** the database stores only a SHA-256 digest of each refresh token, and logout revokes it server side. Not bcrypt: the tokens are long and random, so slow hashing adds nothing, and bcrypt only reads the first 72 bytes, which made tokens for the same user collide. A random `jti` keeps two logins in the same second from producing identical tokens.
 - **Separate token secrets and a type claim:** refresh and access tokens use different secrets, and `get_current_user` rejects a refresh token used as an access token.
 - **Update cannot change ownership:** `PUT /transactions/{id}` drops `id` and `user_id` from the update.
+- **Validation errors don't repeat what was sent:** FastAPI's default 422 body includes each rejected value, which for signup and login meant the plaintext password. The app's handler keeps only `type`, `loc` and `msg`, so the client still learns what's wrong.
+- **Quiet client logs:** a failed request logs only its method, path and status to the browser console, never the response body.
+- **Production checks at startup:** with `ENVIRONMENT=production` the API refuses to start with short or matching secrets, or with CORS origins that are `*` or not `https://`.
 
 ---
 
@@ -377,7 +395,11 @@ Planned for expense splitting: `Friend`, `Split`, `SplitParticipant` (see [ROADM
 
 ## Testing
 
-Backend tests use pytest against a real PostgreSQL database (no mocks). They cover the trend endpoint, the monthly summary, the category analytics, refunds, ownership between users, and signup/login.
+Backend tests use pytest against a real PostgreSQL database (no mocks). They cover:
+
+- **Auth:** signup and login, refresh token storage, rotation and reuse detection, expired token cleanup, and `token_version` logout
+- **Money:** the monthly summary, category analytics, the trend endpoint, refunds and IST date bucketing
+- **Safety:** ownership between users, settings and production checks, the cookie path and CORS, and validation errors that don't echo input
 
 One-time setup:
 
@@ -426,16 +448,15 @@ Full list with checkboxes in [ROADMAP.md](ROADMAP.md).
 
 - No frontend tests, and no backend tests yet for transaction CRUD or category create/delete
 - Not deployed; runs locally only
-- Refunds aren't linked to a purchase (accepted on purpose for v1), so a refund larger than the purchase, or under a different category, isn't caught and can make spending negative
+- Refunds aren't linked to a purchase (accepted on purpose for v1). A refund larger than the purchase isn't caught and can make spending negative, and one filed under a different category than the purchase skews per-category spending
 - Expired `refresh_tokens` rows are deleted only when that user logs in again
 - The access token is stored in `localStorage`, so an XSS bug could read it
 - Rate limits cover only signup and login, are in-memory and are per process
 - All dates are bucketed in one fixed timezone (`Asia/Kolkata`), not per user
-- A refund recorded under a different category than the purchase skews per-category spending
 - One account per user, so there is no "amount cannot exceed balance" check
 
 ---
 
 ## License
 
-MIT (no LICENSE file in the repo yet)
+No license yet, so all rights are reserved for now.
